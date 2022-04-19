@@ -9,7 +9,10 @@ class Node:
 class End:
 
     def __init__(self):
-        self.rides = []
+        self.rides = {
+            RIDES_TAKEN:[],
+            RIDES_PROVIDED:[]
+        }
         self.txn = {
             TXN_IN:[],
             TXN_OUT:[]
@@ -51,9 +54,45 @@ class Trie:
         valid,end = self.search(txn_block['sender'])
         if not valid:
             end = self.insert(txn_block['sender'])
-        end.txn[TXN_IN].append(txn_block)
+        end.txn[TXN_OUT].append(txn_block)
 
         valid,end = self.search(txn_block['receiver'])
         if not valid:
             end = self.insert(txn_block['receiver'])
-        end.txn[TXN_OUT].append(txn_block)
+        end.txn[TXN_IN].append(txn_block)
+
+    def insert_ride(self,ride_block):
+        valid,end = self.search(ride_block['passenger'])
+        if not valid:
+            end = self.insert(ride_block['passenger'])
+        end.rides[RIDES_TAKEN].append(ride_block)
+
+        valid,end = self.search(ride_block['provider'])
+        if not valid:
+            end = self.insert(ride_block['provider'])
+        end.rides[RIDES_PROVIDED].append(ride_block)
+
+    def calculate_balance(self,pubKey):
+        valid,end = self.search(pubKey)
+        if not valid:
+            return 0
+        inAmt = 0
+        outAmt = 0
+        for tx in end.txn[TXN_IN]:
+            inAmt += tx['amount']
+        for tx in end.txn[TXN_OUT]:
+            outAmt += tx['amount']
+        return inAmt-outAmt
+
+    def retrieve_data(self,pubKey):
+
+        response = {
+            'txin':[],
+            'txout':[],
+            'ridetaken':[],
+            'rideprovided':[]
+        }
+
+        valid,end = self.search(pubKey)
+        if not valid:
+            return response
