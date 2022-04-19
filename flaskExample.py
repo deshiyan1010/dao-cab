@@ -10,17 +10,17 @@ class TestView(FlaskView):
 
     def index(self):
     # http://localhost:5000/
-        return jsonify({})
+        return jsonify({"hwkk":"dcd"}),200
 
     @route('/second')
-    def second(self,methods=['POST']):
+    def secondfn(self,methods=['POST']):
     # http://localhost:5000/second
         print(request.get_json())
-        response = jsonify({'status':'success','method':'second'})
+        response = jsonify({'status':'success','method':'second',"name":request.get_json()["name"]})
         return response,200
     
     @route('/third/<name>', methods=['POST'])
-    def third(self,name):
+    def thirdfn(self,name):
     # http://localhost:5000/third/yourname
         response = jsonify({'status':'success','method':'third','name':name})
         return response,200
