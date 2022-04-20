@@ -5,16 +5,18 @@ import requests
 from uuid import uuid4
 from urllib.parse import urlparse
 
+
 class Blockchain:
 
-    def __init__(self):
+    def __init__(self,pubKey,pvtKey):
         self.chain = []
         self.transactions = []
         self.bookings = []
         self.ride_done = []
         self.create_block(proof=1, previous_hash='0')
         self.nodes = set()
-        self.user_address = str(uuid4()).replace('-', '')
+        self.pubKey = pubKey
+        self.pvtKey = pvtKey
 
     def create_block(self, proof, previous_hash):
         block = {'index': len(self.chain) + 1,
@@ -26,8 +28,11 @@ class Blockchain:
 
         self.transactions = []
         self.ride_done = []
-        self.chain.append(block)
         return block
+
+    def append_block(self,block):
+        self.chain.append(block)
+
 
     def get_previous_block(self):
         return self.chain[-1]
@@ -43,6 +48,22 @@ class Blockchain:
             else:
                 new_proof += 1
         return new_proof
+
+    def mine_block(self):
+        previous_block = self.get_previous_block()
+        previous_proof = previous_block['proof']
+        proof = self.proof_of_work(previous_proof)
+        previous_hash = self.hash(previous_block)
+        self.add_transaction(self.pubKey, "COINBASE", 1)
+        block = self.create_block(proof, previous_hash)
+        response = {'message': 'Congratulations, you just mined a block!',
+                    'index': block['index'],
+                    'transactions': block['transactions'],
+                    'timestamp': block['timestamp'],
+                    'proof': block['proof'],
+                    'previous_hash': block['previous_hash']}
+
+        return response,block
 
     def hash(self, block):
         encoded_block = json.dumps(block, sort_keys=True).encode()
