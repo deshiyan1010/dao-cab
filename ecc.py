@@ -6,13 +6,15 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from tinyec import registry
 import hashlib, secrets, binascii
+from nummaster.basic import sqrtmod
 
 class EllipticCurveCryptography:
     
     def __init__(self):
         self.Pcurve = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 -1 
         self.N=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-        self.Acurve = 0; Bcurve = 7 
+        self.Acurve = 0
+        self.Bcurve = 7 
         self.Gx = 55066263022277343669578718895168534326250603453777594175500187360389116729240
         self.Gy = 32670510020758816978083085130507043184471273380659243275938904335757337482424
         self.GPoint = (self.Gx,self.Gy)
@@ -65,6 +67,19 @@ class EllipticCurveCryptography:
         PublicKey = self.EccMultiply(self.GPoint,private_key)
         return PublicKey[0],PublicKey[1],private_key
 
+    def compress_pubKey(self,pubx,puby):
+        if puby%2==1:
+            return int("1"+hex(pubx)[2:],16)
+        return int("2"+hex(pubx)[2:],16)
+
+    def decompress_pubKey(self,pubx):
+        hexString = hex(pubx)
+        inter = sqrtmod(pow(int(hexString[3:],16), 3, self.Pcurve) + self.Acurve * pubx + self.Bcurve, self.Pcurve)
+        if (hexString[2]=="1" and bool(inter & 1)==1) or (hexString[2]=="2" and bool(inter & 1)!=1):
+            return (int(hexString[3:],16),inter) 
+        else:
+            return (int(hexString[3:],16),self.Pcurve-inter)
+
     def sign(self,private_key,hash):
         if isinstance(hash,str):
             hash = int(hash,16)
@@ -74,12 +89,13 @@ class EllipticCurveCryptography:
         s = ((hash + r*private_key)*(self.modinv(RandNum,self.N))) % self.N
         return r,s
 
-    def verify(self,public_x,public_y,hash,r,s):
+    def verify(self,pubKey,hash,r,s):
+        pubKey = self.decompress_pubKey(pubKey)
         if isinstance(hash,str):
             hash = int(hash,16)
         w = self.modinv(s,self.N)
         xu1, yu1 = self.EccMultiply(self.GPoint,(hash * w)%self.N)
-        xu2, yu2 = self.EccMultiply((public_x,public_y),(r*w)%self.N)
+        xu2, yu2 = self.EccMultiply(pubKey,(r*w)%self.N)
         x,y = self.ECadd((xu1,yu1),(xu2,yu2))
         if r==x:
             return True
@@ -105,9 +121,8 @@ class EllipticCurveCryptography:
         return sha.digest()
 
     def encrypt_ECC(self,msg, pubKey):
-        
         ciphertextPrivKey = self.generate_pvt_key()
-        sharedECCKey =  self.EccMultiply(pubKey,ciphertextPrivKey)
+        sharedECCKey =  self.EccMultiply(self.decompress_pubKey(pubKey),ciphertextPrivKey)
         secretKey = self.ecc_point_to_256_bit_key(sharedECCKey)
         ciphertext, nonce, authTag = self.encrypt_AES_GCM(msg, secretKey)
         ciphertextPubKey = self.EccMultiply(self.GPoint,ciphertextPrivKey)
