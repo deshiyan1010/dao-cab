@@ -1,59 +1,111 @@
 
+from crypt import methods
 from consesus import Consesus
 from ecc import EllipticCurveCryptography
 from blockchain import Blockchain
 
-class EndPoint:
-    def __init__(self,ip,port,publicKey,hashedMessage):
-        self.ip = ip 
-        self.port = port
-        self.publicKey = publicKey
-        self.hashedMessage = hashedMessage
+from urllib import response
+from flask import Flask,request
+from flask_classful import FlaskView,route
+from flask import jsonify
 
-    def verify(self):
-        return EllipticCurveCryptography.verify(*self.publicKey,*self.hashedMessage)
-    
-    def __hash__(self) -> int:
-        return super.__hash__(str(self.ip)+str(self.port))
+import requests
 
-class Connection:
 
-    def __init__(self):
+
+app = Flask(__name__)
+host='0.0.0.0'
+port=5000
+
+class Connection(FlaskView):
+    route_base = '/'
+
+    def __init__(self,starter_node):
+        pubx,puby,pvt = EllipticCurveCryptography.generate_ecc_pair()
         self.nodes = set()
-        self.blockchain = Blockchain()
+        self.blockchain = Blockchain(pubx,puby,pvt)
         self.consesus = Consesus(self.blockchain)
+        self.connect(*starter_node.split(":"))
 
-    def connect(self,node_addr):
-        pass
+    def combine(self,ip,port,path):
+        return ip+":"+port+"/"+path
 
+    def connect(self,nodeIP,nodePort):
+        req = jsonify({
+            "ip":host,
+            "port":port
+            })
+        
+        req_obj = requests.post(self.combine(nodeIP,nodePort,"addNode"),data=req)
+        
+        if req_obj.status_code!=200:
+            print("Problem connecting")
+            exit(0)
+    
+        print("Connected")
+        
+        self.node.add(tuple(nodeIP,nodePort))
+        
+
+    @route('/addNode',methods=['POST'])
     def addNode(self,):
-        pass
+        req = request.get_json()
+        self.nodes.add((req['ip'],req['port']))
+        return jsonify({}),200
 
     def leave(self,):
-        pass
-    
-    def removeNode(self,):
-        #action to leave request
-        pass
+        req = jsonify({"ip":host,"port":port})
+        self.broadcast_message('purge',req)
+        exit(0)
 
-    def request_block_verification(self,):
-        pass
+
+    @route('/purge',methods=['POST'])
+    def purge(self,):
+        req = request.get_json()
+        
+        if (req['ip'],req['port']) not in self.nodes:
+            resp = jsonify({"message":"Request purge node not in node set"})
+            return resp, 404
+        
+        self.nodes.pop((req['ip'],req['port']))
+        return jsonify({}), 200
+        
     
+    def request_block_verification(self,block):
+        if self.consesus.validate_block(block):
+            return True
+        return False
+        
+    
+    @route('/blockbroadcast',methods=['POST'])
     def broadcast_block(self,):
-        pass
+        req = request.get_json()
+        block = req["block"]
 
+        if self.request_block_verification(block):
+            self.broadcast_message('blockbroadcast',req)
+            self.block_addition(block)
+            return jsonify({}),200
+        else:
+            return jsonify({"message":"ALERT: Invalid block. This block will not be broadcasted."}), 400
+
+
+    @route('/getchain',methods=['GET'])
     def get_chain(self,):
-        pass
+        response = {'chain': self.blockchain.chain, 'length': len(self.blockchain.chain)}
+        return jsonify(response), 200
 
-    def request_neighbours_for_neighbour(self,):
-        #list of neighbouring addreses
-        pass
+    def request_neighbours_for_neighbor(self,):
+        response = {'neighbors': self.nodes}
+        return jsonify(response), 200
 
-    def block_addition(self,):
-        pass
+    def block_addition(self,block):
+        self.consesus.add_block(block)
 
-    def broadcast_message(self,):
-        pass
+    def broadcast_message(self,url,data):
+        for endpoint in self.nodes:
+            requests.post(self.combine(*endpoint,url),data=data)
+
     
     def add_transaction(self,):
         #params public key, signed hash, reciever and amount
@@ -73,4 +125,6 @@ class Connection:
         
         pass
     
-#check token balance while accepting bid
+
+Connection.register(app,route_base = '/')
+app.run()
