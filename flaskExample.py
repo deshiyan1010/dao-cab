@@ -12,8 +12,8 @@ class TestView(FlaskView):
     # http://localhost:5000/
         return jsonify({"hwkk":"dcd"}),200
 
-    @route('/second')
-    def secondfn(self,methods=['POST']):
+    @route('/second',methods=['POST'])
+    def secondfn(self):
     # http://localhost:5000/second
         print(request.get_json())
         response = jsonify({'status':'success','method':'second',"name":request.get_json()["name"]})
