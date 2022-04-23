@@ -51,12 +51,13 @@ class Blockchain:
         return new_proof
 
     def mine_block(self):
+        block = self.create_block(None, previous_hash)
         previous_block = self.get_previous_block()
         previous_proof = previous_block['proof']
         proof = self.proof_of_work(previous_proof)
+        block['proof'] = proof
         previous_hash = self.hash(previous_block)
-        self.add_transaction(self.pubKey, "COINBASE", 1)
-        block = self.create_block(proof, previous_hash)
+        self.add_transaction(self.pubKey, "COINBASE", 1)        
         response = {'message': 'Congratulations, you just mined a block!',
                     'index': block['index'],
                     'transactions': block['transactions'],
