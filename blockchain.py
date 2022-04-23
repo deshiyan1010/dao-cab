@@ -6,6 +6,16 @@ from uuid import uuid4
 from urllib.parse import urlparse
 from trie import Trie
 
+
+class Mining:
+ 
+    __shared_state = dict()
+ 
+    def __init__(self):
+        self.__dict__ = self.__shared_state
+        self.mining = False
+
+
 class Blockchain:
 
     def __init__(self,pubKey,pvtKey):
@@ -18,6 +28,8 @@ class Blockchain:
         self.pubKey = pubKey
         self.pvtKey = pvtKey
         self.trie = Trie()
+        self.globalMine = Mining()
+
 
     def create_block(self, proof, previous_hash):
         block = {'index': len(self.chain) + 1,
@@ -41,20 +53,29 @@ class Blockchain:
     def proof_of_work(self, previous_proof):
         new_proof = 1
         check_proof = False
-        while check_proof is False:
+        while self.globalMine.mining==True and check_proof is False:
             hash_operation = hashlib.sha256(
                 str(new_proof**2 - previous_proof**2).encode()).hexdigest()
             if hash_operation[:4] == '0000':
                 check_proof = True
             else:
                 new_proof += 1
-        return new_proof
+        
+        if self.globalMine.mining:
+            return new_proof
+        else:
+            return -1
 
     def mine_block(self):
         block = self.create_block(None, previous_hash)
         previous_block = self.get_previous_block()
         previous_proof = previous_block['proof']
         proof = self.proof_of_work(previous_proof)
+        
+        if self.globalMine.mining==False:
+            return None,None
+
+
         block['proof'] = proof
         previous_hash = self.hash(previous_block)
         self.add_transaction(self.pubKey, "COINBASE", 1)        

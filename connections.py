@@ -2,7 +2,7 @@
 from crypt import methods
 from consesus import Consesus
 from ecc import EllipticCurveCryptography
-from blockchain import Blockchain
+from blockchain import Blockchain,Mining
 from hashQ import Queue
 
 from urllib import response
@@ -32,6 +32,7 @@ nodes = set()
 blockchain = Blockchain(comp,pvt)
 consesus = Consesus(blockchain)
 
+mining = Mining()
 queue = Queue(100)
 
 class Connection(FlaskView):
@@ -112,6 +113,7 @@ class Connection(FlaskView):
         block = req["block"]
 
         if self.request_block_verification(block):
+            mining.mining = False
             self.broadcast_message_post('blockbroadcast',req)
             self.block_addition(block)
             return jsonify({}),200
@@ -157,6 +159,17 @@ class Connection(FlaskView):
         for endpoint in nodes:
             requests.post(self.combine(*endpoint,url),json=data).json()
 
+    @route('/mine',methods=["POST"])
+    def mine(self):
+        mining.mining = True
+        response,block = blockchain.mine_block()
+        if response==None:
+            return jsonify({"message":"mining was out raced"}),408
+
+        mining.mining = False
+        self.broadcast_message_post('blockbroadcast',block)
+        return response,200
+
     @route('/addtxn',methods=['GET'])
     def add_transaction(self,):
         #params public key, signed hash, reciever and amount
@@ -166,7 +179,7 @@ class Connection(FlaskView):
         #step4 : if valid add to blockchain
         #step5 : add the data to the txn_out in the end node
         #step6 : add the data in to the txn_receiver
-        #step7: broadcast_message
+        #step7 : broadcast_message
 
         req = request.get_json()
         if ecc.verify(req['sender'],req['signed_hash'],req['signature_pair']):
