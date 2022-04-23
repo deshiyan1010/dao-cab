@@ -3,6 +3,7 @@ from crypt import methods
 from consesus import Consesus
 from ecc import EllipticCurveCryptography
 from blockchain import Blockchain
+from hashQ import Queue
 
 from urllib import response
 from flask import Flask,request
@@ -11,6 +12,8 @@ from flask import jsonify
 import argparse
 import requests
 import atexit
+
+import hashlib
 
 import json
 
@@ -29,6 +32,8 @@ nodes = set()
 blockchain = Blockchain(comp,pvt)
 consesus = Consesus(blockchain)
 
+queue = Queue(100)
+
 class Connection(FlaskView):
     route_base = '/'
 
@@ -39,6 +44,7 @@ class Connection(FlaskView):
                 "port":starter_node.split(":")[1]
                 })
             requests.post(self.combine(host,port,"connect"),json=req)
+
         atexit.register(self.purge)
 
 
@@ -56,7 +62,7 @@ class Connection(FlaskView):
         nodeIP = req['ip']
         nodePort = req['port']
         req_obj = requests.post(self.combine(nodeIP,nodePort,"addNode"),json=data)
-        print(req_obj.status_code)
+
         if req_obj.status_code!=200:
             return jsonify({'message':'failed'}),400
     
@@ -78,7 +84,7 @@ class Connection(FlaskView):
 
     def leave(self,):
         req = jsonify({"ip":host,"port":port})
-        self.broadcast_message('purge',req)
+        self.broadcast_message_post('purge',req)
         exit(0)
 
 
@@ -106,16 +112,20 @@ class Connection(FlaskView):
         block = req["block"]
 
         if self.request_block_verification(block):
-            self.broadcast_message('blockbroadcast',req)
+            self.broadcast_message_post('blockbroadcast',req)
             self.block_addition(block)
             return jsonify({}),200
         else:
             return jsonify({"message":"ALERT: Invalid block. This block will not be broadcasted."}), 400
 
 
-    @route('/getchain',methods=['GET'])
-    def get_chain(self,):
-        response = {'chain': blockchain.chain, 'length': len(blockchain.chain)}
+    @route('/getdata',methods=['GET'])
+    def get_data(self,):
+        response = {
+            'chain': blockchain.chain, 
+            'chainlength': len(blockchain.chain),
+            'mempool_txn':blockchain.transactions
+            }
         return jsonify(response), 200
 
     @route('/rnfn',methods=['GET'])
@@ -140,6 +150,10 @@ class Connection(FlaskView):
         return response
 
     def broadcast_message_post(self,url,data):
+        hashed = hashlib.sha1(json.dumps(data).encode('utf-8')).hexdigest()
+        if queue.search(hashed):
+            return
+        queue.insert(hashed)
         for endpoint in nodes:
             requests.post(self.combine(*endpoint,url),json=data).json()
 
@@ -157,7 +171,7 @@ class Connection(FlaskView):
         req = request.get_json()
         if ecc.verify(req['sender'],req['signed_hash'],req['signature_pair']):
             blockchain.add_transaction(req['sender'],req['receiver'], req['amount'])
-            self.broadcast_message('addtxn',req)
+            self.broadcast_message_post('addtxn',req)
             return jsonify({}),200
         else:
             return jsonify({"message":"Signature verification failed"}),400
