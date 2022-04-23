@@ -1,4 +1,6 @@
 from mcodes import *
+import pickle
+import os
 
 class Node:
     
@@ -22,9 +24,20 @@ class Trie:
 
     def __init__(self):
         self.master = Node(-1)
-        
+        self.load()
+
+    def load(self,file="trie"):
+        if file not in set(os.listdir()):
+            return
+        self.master = pickle.load(open(file, 'rb')).master
+
+    def save(self,file="trie"):
+        pickle.dump(self,open(file, 'wb'))
+
     def insert(self, word: str) -> None:
-        return self.insertWord(word,0,self.master)
+        res = self.insertWord(word,0,self.master)
+        self.save()
+        return res
 
     def search(self, word: str) -> bool:
         return self.dfsSearchStrict(word,0,self.master)
@@ -60,6 +73,7 @@ class Trie:
         if not valid:
             end = self.insert(txn_block['receiver'])
         end.txn[TXN_IN].append(txn_block)
+        self.save()
 
     def insert_ride(self,ride_block):
         valid,end = self.search(ride_block['passenger'])
@@ -71,6 +85,7 @@ class Trie:
         if not valid:
             end = self.insert(ride_block['provider'])
         end.rides[RIDES_PROVIDED].append(ride_block)
+        self.save()
 
     def calculate_balance(self,pubKey):
         valid,end = self.search(pubKey)
@@ -105,3 +120,10 @@ class Trie:
         response['found'] = True
         
         return response
+
+
+if __name__=="__main__":
+    t = Trie()
+    # t.insert("hello")
+    print(t.search("hello"))
+    t.save()
