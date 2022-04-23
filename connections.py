@@ -8,50 +8,73 @@ from urllib import response
 from flask import Flask,request
 from flask_classful import FlaskView,route
 from flask import jsonify
-
+import argparse
 import requests
+import atexit
 
+import json
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-p", "--port", help = "Port")
+args = parser.parse_args()
 
 app = Flask(__name__)
-host='0.0.0.0'
-port=5000
+host='127.0.0.1'
+port=args.port
+
+ecc = EllipticCurveCryptography()
+pubx,puby,pvt = ecc.generate_ecc_pair()
+comp = ecc.compress_pubKey(pubx,puby)
+nodes = set()
+blockchain = Blockchain(comp,pvt)
+consesus = Consesus(blockchain)
 
 class Connection(FlaskView):
     route_base = '/'
 
-    def __init__(self,starter_node):
-        pubx,puby,pvt = EllipticCurveCryptography.generate_ecc_pair()
-        self.nodes = set()
-        self.blockchain = Blockchain(pubx,puby,pvt)
-        self.consesus = Consesus(self.blockchain)
-        self.connect(*starter_node.split(":"))
+    def __init__(self,starter_node=None):
+        if starter_node!=None:
+            req = jsonify({
+                "ip":starter_node.split(":")[0],
+                "port":starter_node.split(":")[1]
+                })
+            requests.post(self.combine(host,port,"connect"),json=req)
+        atexit.register(self.purge)
+
 
     def combine(self,ip,port,path):
-        return ip+":"+port+"/"+path
-
-    def connect(self,nodeIP,nodePort):
-        req = jsonify({
+        return "http://"+ip+":"+port+"/"+path
+    
+    @route('/connect',methods=['POST'])
+    def connect(self):
+        data = {
             "ip":host,
             "port":port
-            })
+            }
         
-        req_obj = requests.post(self.combine(nodeIP,nodePort,"addNode"),data=req)
-        
+        req = request.get_json()
+        nodeIP = req['ip']
+        nodePort = req['port']
+        req_obj = requests.post(self.combine(nodeIP,nodePort,"addNode"),json=data)
+        print(req_obj.status_code)
         if req_obj.status_code!=200:
-            print("Problem connecting")
-            exit(0)
+            return jsonify({'message':'failed'}),400
     
-        print("Connected")
-        
-        self.node.add(tuple(nodeIP,nodePort))
-        
+        nodes.add((nodeIP,nodePort))
+        return jsonify({'message':'connected'}),200
+
+
+    @route('/neighbors',methods=['GET'])
+    def getNeighbors(self,):
+        return jsonify({'neigh':list(nodes)}),200
+
 
     @route('/addNode',methods=['POST'])
     def addNode(self,):
+        
         req = request.get_json()
-        self.nodes.add((req['ip'],req['port']))
-        return jsonify({}),200
+        nodes.add((req['ip'],req['port']))
+        return jsonify({'message':'added'}),200
 
     def leave(self,):
         req = jsonify({"ip":host,"port":port})
@@ -63,16 +86,16 @@ class Connection(FlaskView):
     def purge(self,):
         req = request.get_json()
         
-        if (req['ip'],req['port']) not in self.nodes:
+        if (req['ip'],req['port']) not in nodes:
             resp = jsonify({"message":"Request purge node not in node set"})
             return resp, 404
         
-        self.nodes.pop((req['ip'],req['port']))
+        nodes.pop((req['ip'],req['port']))
         return jsonify({}), 200
         
     
     def request_block_verification(self,block):
-        if self.consesus.validate_block(block):
+        if consesus.validate_block(block):
             return True
         return False
         
@@ -92,21 +115,35 @@ class Connection(FlaskView):
 
     @route('/getchain',methods=['GET'])
     def get_chain(self,):
-        response = {'chain': self.blockchain.chain, 'length': len(self.blockchain.chain)}
+        response = {'chain': blockchain.chain, 'length': len(blockchain.chain)}
         return jsonify(response), 200
 
+    @route('/rnfn',methods=['GET'])
     def request_neighbours_for_neighbor(self,):
-        response = {'neighbors': self.nodes}
+        response = self.broadcast_message_get('neighbors',{})
+
+        for _,js in response.items():
+            for nip,nport in js['neigh']:
+                nodes.add((nip,nport))
+        nodes.remove((host,port))
         return jsonify(response), 200
 
     def block_addition(self,block):
-        self.consesus.add_block(block)
+        consesus.add_block(block)
 
-    def broadcast_message(self,url,data):
-        for endpoint in self.nodes:
-            requests.post(self.combine(*endpoint,url),data=data)
+    def broadcast_message_get(self,url,data):
+        response = {}
+        for endpoint in nodes:
+            temp = requests.get(self.combine(*endpoint,url),json=data).json()
+            response[":".join(endpoint)] = temp
+        print(response)
+        return response
 
-    
+    def broadcast_message_post(self,url,data):
+        for endpoint in nodes:
+            requests.post(self.combine(*endpoint,url),json=data).json()
+
+    @route('/addtxn',methods=['GET'])
     def add_transaction(self,):
         #params public key, signed hash, reciever and amount
         #step1 : validate signed hash and public key
@@ -116,15 +153,31 @@ class Connection(FlaskView):
         #step5 : add the data to the txn_out in the end node
         #step6 : add the data in to the txn_receiver
         #step7: broadcast_message
-        pass
 
-    def book_ride(self,passenger,signed_hash,pick_loc,drop_loc):
+        req = request.get_json()
+        if ecc.verify(req['sender'],req['signed_hash'],req['signature_pair']):
+            blockchain.add_transaction(req['sender'],req['receiver'], req['amount'])
+            self.broadcast_message('addtxn',req)
+            return jsonify({}),200
+        else:
+            return jsonify({"message":"Signature verification failed"}),400
+
+        pass
+    
+    @route('/bookride',methods=['GET'])
+    def book_ride(self):
+        
         #params passenger, signed hash, pick_loc,drop_loc
         #step1 : validate signed hash and public key
         #step2:  broadcast_message
-        
-        pass
+
+        req = request.get_json()
+        if ecc.verify(req['passenger'],req['signed_hash'],req['signature_pair']):
+            blockchain.add_booking(req['passenger'],req['pick_loc'], req['drop_loc'])
+            return jsonify({}),200
+        else:
+            return jsonify({"message":"Signature verification failed"}),400
     
 
 Connection.register(app,route_base = '/')
-app.run()
+app.run(host=host,port=port,debug=True)
