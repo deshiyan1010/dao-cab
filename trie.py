@@ -87,6 +87,7 @@ class Trie:
     def retrieve_data(self,pubKey):
 
         response = {
+            'found':False,
             'txin':[],
             'txout':[],
             'ridetaken':[],
@@ -96,3 +97,11 @@ class Trie:
         valid,end = self.search(pubKey)
         if not valid:
             return response
+        
+        response['txin'] = end.txn[TXN_IN]
+        response['txout'] = end.txn[TXN_OUT]
+        response['ridetaken'] = end.rides[RIDES_TAKEN]
+        response['rideprovided'] = end.rides[RIDES_PROVIDED]
+        response['found'] = True
+        
+        return response
