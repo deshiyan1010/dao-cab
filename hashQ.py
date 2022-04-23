@@ -18,20 +18,7 @@ class Queue:
     def __init__(self,keep=100):
         self.arr = deque()
         self.keep = keep
-        self.load()
         self.locator = {}
-
-    def load(self,file="heap"):
-        if file not in set(os.listdir()):
-            return
-        pick = pickle.load(open(file, 'rb'))
-        self.arr = pick.arr
-        self.keep = pick.keep
-
-
-    def save(self,file="heap"):
-        pickle.dump(self,open(file, 'wb'))
-
 
     def insert(self,val):
         node = Node(val)
