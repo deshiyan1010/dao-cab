@@ -134,3 +134,19 @@ class EllipticCurveCryptography:
         secretKey = self.ecc_point_to_256_bit_key(sharedECCKey)
         plaintext = self.decrypt_AES_GCM(ciphertext, nonce, authTag, secretKey)
         return plaintext
+
+
+if __name__=="__main__":
+    e = EllipticCurveCryptography()
+    p1,p2,pvt = e.generate_ecc_pair()
+    comp = e.compress_pubKey(p1,p2)
+    message = "hello"
+    hashed = hashlib.sha256(message.encode('utf-8')).hexdigest()
+    print("1",int(hashed,16))
+    t = e.encrypt_ECC(message,comp)
+    print("2",t)
+    signed = e.sign(pvt,hashed)
+    print("3",signed)
+    verify = e.verify(comp,hashed,*signed)
+    print("4",verify)
+    print("5",e.decrypt_ECC(t,pvt))
