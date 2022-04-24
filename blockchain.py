@@ -18,17 +18,18 @@ class Mining:
 
 class Blockchain:
 
-    def __init__(self,pubKey,pvtKey):
+    def __init__(self,pubKey,pvtKey,gmining):
         self.chain = []
         self.transactions = []
         self.bookings = []
         self.ride_done = []
-        self.create_block(proof=1, previous_hash='0')
+        genBlock = self.create_block(proof=1, previous_hash='0')
+        self.append_block(genBlock)
         self.nodes = set()
         self.pubKey = pubKey
         self.pvtKey = pvtKey
         self.trie = Trie()
-        self.globalMine = Mining()
+        self.globalMine = gmining
 
 
     def create_block(self, proof, previous_hash):
@@ -67,18 +68,27 @@ class Blockchain:
             return -1
 
     def mine_block(self):
-        block = self.create_block(None, previous_hash)
+
         previous_block = self.get_previous_block()
         previous_proof = previous_block['proof']
+        previous_hash = self.hash(previous_block)
+        block = self.create_block(None, previous_hash)
+
         proof = self.proof_of_work(previous_proof)
         
         if self.globalMine.mining==False:
             return None,None
 
-
         block['proof'] = proof
-        previous_hash = self.hash(previous_block)
-        self.add_transaction(self.pubKey, "COINBASE", 1)        
+
+        coinbasetxn = {
+            'sender': "COINBASE",
+            'receiver': self.pubKey,
+            'amount': 1
+            }
+
+        block['transactions'].append(coinbasetxn)
+        self.add_transaction("COINBASE",self.pubKey, 1)        
         response = {'message': 'Congratulations, you just mined a block!',
                     'index': block['index'],
                     'transactions': block['transactions'],
@@ -110,13 +120,15 @@ class Blockchain:
         return True
 
     def add_transaction(self, sender, receiver, amount):
-        if self.trie.calculate_balance(sender)>=amount:
-            self.transactions.append({
+        block = {
                 'sender': sender,
                 'receiver': receiver,
                 'amount': amount
-            })
-            self.trie.insert_txn(self.transactions[-1])
+                }
+        if sender=="COINBASE" or self.trie.calculate_balance(sender)>=amount:
+            if sender!="COINBASE":
+                self.transactions.append(block)
+            self.trie.insert_txn(block)
             return True
         return False
 
@@ -132,5 +144,6 @@ class Blockchain:
         return previous_block['index'] + 1
 
 
-
+    def get_balance(self,pubKey):
+        return self.trie.calculate_balance(pubKey)
 
