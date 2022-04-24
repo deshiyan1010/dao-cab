@@ -1,5 +1,6 @@
 
 from crypt import methods
+from email import message
 from consesus import Consesus
 from ecc import EllipticCurveCryptography
 from blockchain import Blockchain,Mining
@@ -14,7 +15,7 @@ import requests
 import atexit
 
 import hashlib
-
+from pprint import pprint
 import json
 
 parser = argparse.ArgumentParser()
@@ -29,10 +30,10 @@ ecc = EllipticCurveCryptography()
 pubx,puby,pvt = ecc.generate_ecc_pair()
 comp = ecc.compress_pubKey(pubx,puby)
 nodes = set()
-blockchain = Blockchain(comp,pvt)
+mining = Mining()
+blockchain = Blockchain(comp,pvt,mining)
 consesus = Consesus(blockchain)
 
-mining = Mining()
 queue = Queue(100)
 
 class Connection(FlaskView):
@@ -49,9 +50,51 @@ class Connection(FlaskView):
         atexit.register(self.purge)
 
 
+
+    def block_addition(self,block):
+        consesus.add_block(block)
+
+    def broadcast_message_get(self,url,data):
+        response = {}
+        for endpoint in nodes:
+            temp = requests.get(self.combine(*endpoint,url),json=data).json()
+            response[":".join(endpoint)] = temp
+        return response
+
+    def broadcast_message_post(self,url,data):
+        
+        hashed = hashlib.sha1(json.dumps(data).encode('utf-8')).hexdigest()
+    
+        if queue.search(hashed):
+            return
+        
+        queue.insert(hashed)
+        for endpoint in nodes:
+            print(requests.post(self.combine(*endpoint,url),json=data).json())
+
+
     def combine(self,ip,port,path):
         return "http://"+ip+":"+port+"/"+path
     
+    def leave(self,):
+        req = {"ip":host,"port":port}
+        self.broadcast_message_post('purge',req)
+        exit(0)
+
+    def request_block_verification(self,block):
+        if consesus.validate_block(block):
+            return True
+        return False
+
+    def broadcasted(self,data):
+        hashed = hashlib.sha1(json.dumps(data).encode('utf-8')).hexdigest()
+        return queue.search(hashed)
+
+
+    @route('/getkey',methods=["GET"])
+    def getKey(self,):
+        return jsonify({"pub":comp,"pvt":pvt}),200
+
     @route('/connect',methods=['POST'])
     def connect(self):
         data = {
@@ -83,11 +126,6 @@ class Connection(FlaskView):
         nodes.add((req['ip'],req['port']))
         return jsonify({'message':'added'}),200
 
-    def leave(self,):
-        req = jsonify({"ip":host,"port":port})
-        self.broadcast_message_post('purge',req)
-        exit(0)
-
 
     @route('/purge',methods=['POST'])
     def purge(self,):
@@ -101,25 +139,23 @@ class Connection(FlaskView):
         return jsonify({}), 200
         
     
-    def request_block_verification(self,block):
-        if consesus.validate_block(block):
-            return True
-        return False
-        
-    
     @route('/blockbroadcast',methods=['POST'])
     def broadcast_block(self,):
         req = request.get_json()
         block = req["block"]
 
-        if self.request_block_verification(block):
-            mining.mining = False
-            self.broadcast_message_post('blockbroadcast',req)
-            self.block_addition(block)
-            return jsonify({}),200
-        else:
-            return jsonify({"message":"ALERT: Invalid block. This block will not be broadcasted."}), 400
+        if not self.broadcasted(req):
+            if self.request_block_verification(block):
+                mining.mining = False
+                self.broadcast_message_post('blockbroadcast',req)
+                self.block_addition(block)
+                return jsonify({}),200
+            else:
+                message = "ALERT: Invalid block. This block will not be broadcasted."
+                print("SELF: ",message)
+                return jsonify({"message":message}), 400
 
+        return jsonify({"message":"repeat request"}),200
 
     @route('/getdata',methods=['GET'])
     def get_data(self,):
@@ -140,25 +176,6 @@ class Connection(FlaskView):
         nodes.remove((host,port))
         return jsonify(response), 200
 
-    def block_addition(self,block):
-        consesus.add_block(block)
-
-    def broadcast_message_get(self,url,data):
-        response = {}
-        for endpoint in nodes:
-            temp = requests.get(self.combine(*endpoint,url),json=data).json()
-            response[":".join(endpoint)] = temp
-        print(response)
-        return response
-
-    def broadcast_message_post(self,url,data):
-        hashed = hashlib.sha1(json.dumps(data).encode('utf-8')).hexdigest()
-        if queue.search(hashed):
-            return
-        queue.insert(hashed)
-        for endpoint in nodes:
-            requests.post(self.combine(*endpoint,url),json=data).json()
-
     @route('/mine',methods=["POST"])
     def mine(self):
         mining.mining = True
@@ -166,9 +183,17 @@ class Connection(FlaskView):
         if response==None:
             return jsonify({"message":"mining was out raced"}),408
 
+        blockchain.append_block(block)
         mining.mining = False
-        self.broadcast_message_post('blockbroadcast',block)
+        self.broadcast_message_post('blockbroadcast',{"block":block})
         return response,200
+    
+    @route('/balance',methods=["GET"])
+    def get_balance(self):
+        req = request.get_json()
+        bal = blockchain.get_balance(req["pub"])
+        return jsonify({"bal":bal}), 200
+
 
     @route('/addtxn',methods=['GET'])
     def add_transaction(self,):
