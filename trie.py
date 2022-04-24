@@ -34,12 +34,24 @@ class Trie:
     def save(self,file="trie"):
         pickle.dump(self,open(file, 'wb'))
 
-    def insert(self, word: str) -> None:
+    def is_hex(self,s):
+        try:
+            int(s, 16)
+            return True
+        except:
+            return False
+
+
+    def insert(self, word) -> None:
+        if isinstance(word, int):
+            word = hex(word)
         res = self.insertWord(word,0,self.master)
         self.save()
         return res
 
-    def search(self, word: str) -> bool:
+    def search(self, word) -> bool:
+        if isinstance(word, int):
+            word = hex(word)
         return self.dfsSearchStrict(word,0,self.master)
 
     def insertWord(self,word,ptr,node):
@@ -64,26 +76,31 @@ class Trie:
         return False,None
 
     def insert_txn(self,txn_block):
-        valid,end = self.search(txn_block['sender'])
+        if txn_block['sender']!="COINBASE":
+            sender = hex(txn_block['sender'])
+        else:
+            sender = "COINBASE"
+
+        valid,end = self.search(sender)
         if not valid:
-            end = self.insert(txn_block['sender'])
+            end = self.insert(sender)
         end.txn[TXN_OUT].append(txn_block)
 
-        valid,end = self.search(txn_block['receiver'])
+        valid,end = self.search(hex(txn_block['receiver']))
         if not valid:
-            end = self.insert(txn_block['receiver'])
+            end = self.insert(hex(txn_block['receiver']))
         end.txn[TXN_IN].append(txn_block)
         self.save()
 
     def insert_ride(self,ride_block):
-        valid,end = self.search(ride_block['passenger'])
+        valid,end = self.search(hex(ride_block['passenger']))
         if not valid:
-            end = self.insert(ride_block['passenger'])
+            end = self.insert(hex(ride_block['passenger']))
         end.rides[RIDES_TAKEN].append(ride_block)
 
-        valid,end = self.search(ride_block['provider'])
+        valid,end = self.search(hex(ride_block['provider']))
         if not valid:
-            end = self.insert(ride_block['provider'])
+            end = self.insert(hex(ride_block['provider']))
         end.rides[RIDES_PROVIDED].append(ride_block)
         self.save()
 
