@@ -87,7 +87,8 @@ class EllipticCurveCryptography:
         xRandSignPoint, yRandSignPoint = self.EccMultiply(self.GPoint,RandNum)
         r = xRandSignPoint % self.N
         s = ((hash + r*private_key)*(self.modinv(RandNum,self.N))) % self.N
-        return r,s
+        signed_object = {'r':r,'s':s}
+        return signed_object
 
     def verify(self,pubKey,hash,r,s):
         pubKey = self.decompress_pubKey(pubKey)
@@ -126,10 +127,19 @@ class EllipticCurveCryptography:
         secretKey = self.ecc_point_to_256_bit_key(sharedECCKey)
         ciphertext, nonce, authTag = self.encrypt_AES_GCM(msg, secretKey)
         ciphertextPubKey = self.EccMultiply(self.GPoint,ciphertextPrivKey)
-        return (ciphertext, nonce, authTag, ciphertextPubKey)
+        enc_obj = {
+            'ciphertext':ciphertext,
+            'nonce':nonce,
+            'authTag':authTag,
+            'ciphertextPubKey':ciphertextPubKey
+        }
+        return enc_obj
 
     def decrypt_ECC(self,encryptedMsg, privKey):
-        (ciphertext, nonce, authTag, ciphertextPubKey) = encryptedMsg
+        ciphertext = encryptedMsg['ciphertext']
+        nonce = encryptedMsg['nonce']
+        authTag = encryptedMsg['authTag']
+        ciphertextPubKey = encryptedMsg['ciphertextPubKey']
         sharedECCKey = self.EccMultiply(ciphertextPubKey,privKey)
         secretKey = self.ecc_point_to_256_bit_key(sharedECCKey)
         plaintext = self.decrypt_AES_GCM(ciphertext, nonce, authTag, secretKey)
