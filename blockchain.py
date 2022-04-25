@@ -125,10 +125,8 @@ class Blockchain:
                 'receiver': receiver,
                 'amount': amount
                 }
-        if sender=="COINBASE" or self.trie.calculate_balance(sender)>=amount:
-            if sender!="COINBASE":
-                self.transactions.append(block)
-            self.trie.insert_txn(block)
+        if sender!="COINBASE" and self.trie.calculate_balance(sender)>=amount:
+            self.transactions.append(block)
             return True
         return False
 
