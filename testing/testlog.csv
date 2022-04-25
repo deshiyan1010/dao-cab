@@ -1,8 +1,8 @@
-date,testfile,function,testby,pass/fail
-22/04/2022,t1,connect,vin,pass
-22/04/2022,t1,neighbors,vin,pass
-22/04/2022,t1,rnfn,vin,pass
-24/04/2022,t2,getkey,vin,pass
-24/04/2022,t2,mine,vin,pass
-24/04/2022,t2,balance,vin,pass
-24/04/2022,t2,getdata,vin,pass
+date,testfile,function,testby,pass/fail,note
+22/04/2022,t1,connect,vin,pass,
+22/04/2022,t1,neighbors,vin,pass,
+22/04/2022,t1,rnfn,vin,pass,
+24/04/2022,t2,getkey,vin,pass,
+24/04/2022,t2,mine,vin,pass,txn in block verification pending
+24/04/2022,t2,balance,vin,pass,
+24/04/2022,t2,getdata,vin,pass,

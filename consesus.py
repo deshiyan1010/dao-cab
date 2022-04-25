@@ -7,6 +7,7 @@ class Consesus:
         self.blockchain = blockchain
 
     def validate_block(self,block):
+        #ind txn existance check missing
         new_proof = block['proof']
         previous_proof = self.blockchain.get_previous_block()['proof']
         hash_operation = hashlib.sha256(
