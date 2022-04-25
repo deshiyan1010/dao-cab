@@ -183,7 +183,7 @@ class Connection(FlaskView):
         if response==None:
             return jsonify({"message":"mining was out raced"}),408
 
-        blockchain.append_block(block)
+        consesus.add_block(block)
         mining.mining = False
         self.broadcast_message_post('blockbroadcast',{"block":block})
         return response,200
@@ -197,24 +197,24 @@ class Connection(FlaskView):
 
     @route('/addtxn',methods=['GET'])
     def add_transaction(self,):
-        #params public key, signed hash, reciever and amount
+
+
+        #params public key, signed hash, reciever and amount   REFER ecc.py FOR GENERATING SIGNATURES AND VERIFICATION  
+        #https://cryptobook.nakov.com/digital-signatures/ecdsa-sign-verify-messages to know now ecc signing and verification works
         #step1 : validate signed hash and public key
         #step2 : get the end node
         #step3 : calculate balance
-        #step4 : if valid add to blockchain
-        #step5 : add the data to the txn_out in the end node
-        #step6 : add the data in to the txn_receiver
-        #step7 : broadcast_message
+        #step4 : if valid add to mempool
+        #step5 : broadcast_message
 
         req = request.get_json()
-        if ecc.verify(req['sender'],req['signed_hash'],req['signature_pair']):
+        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
             blockchain.add_transaction(req['sender'],req['receiver'], req['amount'])
             self.broadcast_message_post('addtxn',req)
             return jsonify({}),200
         else:
             return jsonify({"message":"Signature verification failed"}),400
 
-        pass
     
     @route('/bookride',methods=['GET'])
     def book_ride(self):
