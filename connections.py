@@ -208,7 +208,7 @@ class Connection(FlaskView):
         #step5 : broadcast_message
 
         req = request.get_json()
-        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req) and blockchain.get_balance(req['sender'])>=req['amount']:
             blockchain.add_transaction(req['sender'],req['receiver'], req['amount'])
             self.broadcast_message_post('addtxn',req)
             return jsonify({}),200
