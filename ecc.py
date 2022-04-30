@@ -80,9 +80,13 @@ class EllipticCurveCryptography:
         else:
             return (int(hexString[3:],16),self.Pcurve-inter)
 
-    def sign(self,private_key,hash):
-        if isinstance(hash,str):
-            hash = int(hash,16)
+    def sign(self,private_key,hash=None):
+        if hash!=None:
+            if isinstance(hash,str):
+                hash = int(hash,16)
+        else:
+            hash = hashlib.sha256("random".encode('utf-8')).hexdigest()
+            
         RandNum = self.generate_pvt_key()
         xRandSignPoint, yRandSignPoint = self.EccMultiply(self.GPoint,RandNum)
         r = xRandSignPoint % self.N
