@@ -85,8 +85,8 @@ class EllipticCurveCryptography:
             if isinstance(hash,str):
                 hash = int(hash,16)
         else:
-            hash = hashlib.sha256("random".encode('utf-8')).hexdigest()
-            
+            hash = int(hashlib.sha256("random".encode('utf-8')).hexdigest(),16)
+
         RandNum = self.generate_pvt_key()
         xRandSignPoint, yRandSignPoint = self.EccMultiply(self.GPoint,RandNum)
         r = xRandSignPoint % self.N
@@ -96,8 +96,11 @@ class EllipticCurveCryptography:
 
     def verify(self,pubKey,hash,r,s):
         pubKey = self.decompress_pubKey(pubKey)
-        if isinstance(hash,str):
-            hash = int(hash,16)
+        if hash!=None:
+            if isinstance(hash,str):
+                hash = int(hash,16)
+        else:
+            hash = int(hashlib.sha256("random".encode('utf-8')).hexdigest(),16)
         w = self.modinv(s,self.N)
         xu1, yu1 = self.EccMultiply(self.GPoint,(hash * w)%self.N)
         xu2, yu2 = self.EccMultiply(pubKey,(r*w)%self.N)
@@ -159,8 +162,8 @@ if __name__=="__main__":
     print("1",int(hashed,16))
     t = e.encrypt_ECC(message,comp)
     print("2",t)
-    signed = e.sign(pvt,hashed)
+    signed = e.sign(pvt)
     print("3",signed)
-    verify = e.verify(comp,hashed,*signed)
+    verify = e.verify(comp,None,signed['r'],signed['s'])
     print("4",verify)
     print("5",e.decrypt_ECC(t,pvt))
