@@ -17,6 +17,8 @@ import atexit
 import hashlib
 from pprint import pprint
 import json
+from flask_cors import CORS
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--port", help = "Port")
@@ -25,6 +27,8 @@ args = parser.parse_args()
 app = Flask(__name__)
 host='127.0.0.1'
 port=args.port
+CORS(app)
+
 
 ecc = EllipticCurveCryptography()
 pubx,puby,pvt = ecc.generate_ecc_pair()
@@ -230,6 +234,19 @@ class Connection(FlaskView):
         else:
             return jsonify({"message":"Signature verification failed"}),400
     
+
+    @route('/requestredirect',methods=["POST"])   
+    def redirect(self):
+        req = json.loads(request.get_json())
+        processedJson = {}
+
+        for r in req:
+            processedJson[r["name"]] = r["value"]
+        print(processedJson)
+        if processedJson["reqtype"].lower()=="post":
+            return jsonify(requests.post(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
+        else: 
+            return jsonify(requests.get(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
 
 Connection.register(app,route_base = '/')
 app.run(host=host,port=port,debug=True)
