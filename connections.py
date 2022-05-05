@@ -92,7 +92,7 @@ class Connection(FlaskView):
 
     @route('/getkey',methods=["GET"])
     def getKey(self,):
-        return jsonify({"pub":hex(comp),"pvt":hex(pvt)}),200
+        return jsonify({"pub":comp,"pvt":pvt,"pubh":hex(comp),"pvth":hex(pvt)}),200
 
     @route('/connect',methods=['POST'])
     def connect(self):
@@ -191,8 +191,12 @@ class Connection(FlaskView):
     
     @route('/balance',methods=["GET"])
     def get_balance(self):
+
         req = request.get_json()
-        bal = blockchain.get_balance(int(req["pub"],16))
+        if isinstance(req["pub"],str):
+            req["pub"] = int(req["pub"],16)
+        
+        bal = blockchain.get_balance(req["pub"])
         return jsonify({"bal":bal}), 200
 
 

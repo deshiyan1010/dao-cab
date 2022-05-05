@@ -54,6 +54,7 @@ publicKeyP2 = keysP2["pub"]
 publicKeyP3 = keysP3["pub"]
 privateKeyP3 = keysP3["pvt"]
 ecc = EllipticCurveCryptography()
+print(privateKeyP1)
 signed_object = ecc.sign(privateKeyP1)
 signature_r = signed_object['r']
 signature_s = signed_object['s']
