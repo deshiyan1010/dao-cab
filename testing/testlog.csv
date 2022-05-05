@@ -6,3 +6,4 @@ date,testfile,function,testby,pass/fail,note
 24/04/2022,t2,mine,vin,pass,txn in block verification pending
 24/04/2022,t2,balance,vin,pass,
 24/04/2022,t2,getdata,vin,pass,
+05/05/2022,t3,addtxn,ak,pass,
