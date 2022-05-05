@@ -1,5 +1,4 @@
 
-from crypt import methods
 from email import message
 from consesus import Consesus
 from ecc import EllipticCurveCryptography
@@ -12,13 +11,12 @@ from flask_classful import FlaskView,route
 from flask import jsonify
 import argparse
 import requests
+from flask import jsonify, make_response
 import atexit
 
 import hashlib
 from pprint import pprint
 import json
-from flask_cors import CORS
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--port", help = "Port")
@@ -27,8 +25,6 @@ args = parser.parse_args()
 app = Flask(__name__)
 host='127.0.0.1'
 port=args.port
-CORS(app)
-
 
 ecc = EllipticCurveCryptography()
 pubx,puby,pvt = ecc.generate_ecc_pair()
@@ -168,7 +164,7 @@ class Connection(FlaskView):
             'chainlength': len(blockchain.chain),
             'mempool_txn':blockchain.transactions
             }
-        return jsonify(response), 200
+        return make_response(jsonify(response), 200)
 
     @route('/rnfn',methods=['GET'])
     def request_neighbours_for_neighbor(self,):
@@ -182,15 +178,17 @@ class Connection(FlaskView):
 
     @route('/mine',methods=["POST"])
     def mine(self):
+
         mining.mining = True
         response,block = blockchain.mine_block()
         if response==None:
             return jsonify({"message":"mining was out raced"}),408
-
-        consesus.add_block(block)
+        # consesus.add_block(block)
         mining.mining = False
-        self.broadcast_message_post('blockbroadcast',{"block":block})
-        return response,200
+
+        # self.broadcast_message_post('blockbroadcast',{"block":block})
+        requests.post(self.combine(host,port,"blockbroadcast"),json={"block":block})
+        return jsonify(response),200
     
     @route('/balance',methods=["GET"])
     def get_balance(self):
@@ -199,7 +197,7 @@ class Connection(FlaskView):
         return jsonify({"bal":bal}), 200
 
 
-    @route('/addtxn',methods=['GET'])
+    @route('/addtxn',methods=['POST'])
     def add_transaction(self,):
 
 
@@ -212,8 +210,10 @@ class Connection(FlaskView):
         #step5 : broadcast_message
 
         req = request.get_json()
+        print(ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']))
         if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req) and blockchain.get_balance(req['sender'])>=req['amount']:
             blockchain.add_transaction(req['sender'],req['receiver'], req['amount'])
+        
             self.broadcast_message_post('addtxn',req)
             return jsonify({}),200
         else:
@@ -233,20 +233,14 @@ class Connection(FlaskView):
             return jsonify({}),200
         else:
             return jsonify({"message":"Signature verification failed"}),400
-    
 
-    @route('/requestredirect',methods=["POST"])   
-    def redirect(self):
-        req = json.loads(request.get_json())
-        processedJson = {}
-
-        for r in req:
-            processedJson[r["name"]] = r["value"]
-        print(processedJson)
-        if processedJson["reqtype"].lower()=="post":
-            return jsonify(requests.post(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
-        else: 
-            return jsonify(requests.get(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
+    @route('/clearmempool',methods=['POST'])
+    def clearmempool(self):
+        print("before clear mempool")
+        blockchain.transactions=[]
+        print(blockchain.transactions)
+        print("after clear mempool")
+        return jsonify({}),200
 
 Connection.register(app,route_base = '/')
 app.run(host=host,port=port,debug=True)
