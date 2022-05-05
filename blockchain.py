@@ -46,6 +46,7 @@ class Blockchain:
         return block
 
     def append_block(self,block):
+        self.transactions = []
         self.chain.append(block)
 
 
@@ -73,14 +74,14 @@ class Blockchain:
         previous_block = self.get_previous_block()
         previous_proof = previous_block['proof']
         previous_hash = self.hash(previous_block)
-        block = self.create_block(None, previous_hash)
+        
 
         proof = self.proof_of_work(previous_proof)
         
         if self.globalMine.mining==False:
             return None,None
 
-        block['proof'] = proof
+        
 
         coinbasetxn = {
             'sender': "COINBASE",
@@ -88,8 +89,10 @@ class Blockchain:
             'amount': 1
             }
 
-        block['transactions'].append(coinbasetxn)
-        self.add_transaction("COINBASE",self.pubKey, 1)        
+        self.transactions.append(coinbasetxn)
+        self.add_transaction("COINBASE",self.pubKey, 1)     
+        block = self.create_block(None, previous_hash)
+        block['proof'] = proof   
         response = {'message': 'Congratulations, you just mined a block!',
                     'index': block['index'],
                     'transactions': block['transactions'],
@@ -144,4 +147,11 @@ class Blockchain:
 
     def get_balance(self,pubKey):
         return self.trie.calculate_balance(pubKey)
+
+    # def clear_mempool(self):
+    #     print("see i am clearing")
+    #     self.transactions=[]
+    #     print(self.transactions)
+    #     print("i cleared mempools!!")
+    #     return True 
 
