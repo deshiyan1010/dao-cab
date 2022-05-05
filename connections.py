@@ -97,7 +97,7 @@ class Connection(FlaskView):
 
     @route('/getkey',methods=["GET"])
     def getKey(self,):
-        return jsonify({"pub":comp,"pvt":pvt}),200
+        return jsonify({"pub":hex(comp),"pvt":hex(pvt)}),200
 
     @route('/connect',methods=['POST'])
     def connect(self):
@@ -195,7 +195,7 @@ class Connection(FlaskView):
     @route('/balance',methods=["GET"])
     def get_balance(self):
         req = request.get_json()
-        bal = blockchain.get_balance(req["pub"])
+        bal = blockchain.get_balance(int(req["pub"],16))
         return jsonify({"bal":bal}), 200
 
 
@@ -217,7 +217,7 @@ class Connection(FlaskView):
             self.broadcast_message_post('addtxn',req)
             return jsonify({}),200
         else:
-            return jsonify({"message":"Signature verification failed"}),400
+            return jsonify({"message":"Signature verification failed OR repeate broadcast OR insufficient balance"}),400
 
     
     @route('/bookride',methods=['GET'])
@@ -228,25 +228,31 @@ class Connection(FlaskView):
         #step2:  broadcast_message
 
         req = request.get_json()
-        if ecc.verify(req['passenger'],req['signed_hash'],req['signature_pair']):
+        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
             blockchain.add_booking(req['passenger'],req['pick_loc'], req['drop_loc'])
+            self.broadcast_message_post('bookride',req)
             return jsonify({}),200
         else:
-            return jsonify({"message":"Signature verification failed"}),400
+            return jsonify({"message":"Signature verification failed OR repeate broadcast"}),400
     
+    @route('/getsigs',methods=["GET"])   
+    def getsig(self,):
+        req = request.get_json()
+        return jsonify(ecc.sign(req['pvt'],None)),200
+
 
     @route('/requestredirect',methods=["POST"])   
     def redirect(self):
-        req = json.loads(request.get_json())
-        processedJson = {}
+        requestJson = request.get_json()
 
-        for r in req:
-            processedJson[r["name"]] = r["value"]
-        print(processedJson)
-        if processedJson["reqtype"].lower()=="post":
-            return jsonify(requests.post(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
+        if requestJson["reqtype"].lower()=="post":
+            return jsonify(requests.post(self.combine(host,port,requestJson['req']),json=requestJson).json()),200
         else: 
-            return jsonify(requests.get(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
+            return jsonify(requests.get(self.combine(host,port,requestJson['req']),json=requestJson).json()),200
+
+
+
+
 
 Connection.register(app,route_base = '/')
 app.run(host=host,port=port,debug=True)

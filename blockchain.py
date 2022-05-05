@@ -21,11 +21,12 @@ class Blockchain:
     def __init__(self,pubKey,pvtKey,gmining):
         self.chain = []
         self.transactions = []
-        self.bookings = []
-        self.ride_done = []
+        self.booking_open_req = []
+        self.booking_on_going = []
+        self.booking_fulfilled = []
         genBlock = self.create_block(proof=1, previous_hash='0')
         self.append_block(genBlock)
-        self.nodes = set()
+
         self.pubKey = pubKey
         self.pvtKey = pvtKey
         self.trie = Trie()
@@ -38,10 +39,10 @@ class Blockchain:
                  'proof': proof,
                  'previous_hash': previous_hash,
                  'transactions': self.transactions,
-                 'ride_bookings': self.ride_done}
+                 'ride_bookings': self.booking_fulfilled}
 
         self.transactions = []
-        self.ride_done = []
+        self.booking_fulfilled = []
         return block
 
     def append_block(self,block):
@@ -131,15 +132,14 @@ class Blockchain:
         return False
 
     def add_booking(self, passenger, from_loc, to_loc):
-        self.bookings.append({
+        self.booking_open_req.append({
             'passenger': passenger,
             'from_loc': from_loc,
             'to_loc': to_loc,
             'provider':None,
             'amount':None,
         })
-        previous_block = self.get_previous_block()
-        return previous_block['index'] + 1
+
 
 
     def get_balance(self,pubKey):
