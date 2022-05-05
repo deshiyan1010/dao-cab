@@ -234,13 +234,18 @@ class Connection(FlaskView):
         else:
             return jsonify({"message":"Signature verification failed"}),400
 
-    @route('/clearmempool',methods=['POST'])
-    def clearmempool(self):
-        print("before clear mempool")
-        blockchain.transactions=[]
-        print(blockchain.transactions)
-        print("after clear mempool")
-        return jsonify({}),200
+    @route('/requestredirect',methods=["POST"])   
+    def redirect(self):
+        req = json.loads(request.get_json())
+        processedJson = {}
+
+        for r in req:
+            processedJson[r["name"]] = r["value"]
+        print(processedJson)
+        if processedJson["reqtype"].lower()=="post":
+            return jsonify(requests.post(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
+        else: 
+            return jsonify(requests.get(self.combine(host,port,processedJson['req']),json=processedJson).json()),200
 
 Connection.register(app,route_base = '/')
 app.run(host=host,port=port,debug=True)
