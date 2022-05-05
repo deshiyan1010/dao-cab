@@ -2,6 +2,8 @@ from time import sleep
 import requests
 import json
 from pprint import pprint
+import sys 
+sys.path.append('..')
 from ecc import EllipticCurveCryptography
 
 
@@ -11,9 +13,10 @@ def combine(ip,port,path):
 
 host = "127.0.0.1"
 # "http://"+"127.0.0.1"+":"+"5000"+"/"+getdata
-p1 = "5000"
-p2 = "5001"
+p1 = "5001"
+p2 = "5002"
 p3 = "5003"
+
 
 
 # Connecting the nodes p2 and p3 to p1 and checking p1's neighbors
@@ -22,20 +25,20 @@ data = {
     "ip":host,
     "port":p2
     }
-print(requests.post(combine(host,p1,'connect'),json=data).json())
-print(requests.get(combine(host,p1,'neighbors')).json())
+print(1,requests.post(combine(host,p1,'connect'),json=data).json())
+print(2,requests.get(combine(host,p1,'neighbors')).json())
 
 
 data = {
     "ip":host,
     "port":p3
     }
-print(requests.post(combine(host,p2,'connect'),json=data).json())
-print(requests.get(combine(host,p2,'neighbors')).json())
+print(3,requests.post(combine(host,p2,'connect'),json=data).json())
+print(4,requests.get(combine(host,p2,'neighbors')).json())
 
 # mining on p1
 
-print(requests.post(combine(host,p1,'mine'),json={}).json())
+print(5,requests.post(combine(host,p1,'mine'),json={}).json())
 
 # print(requests.post(combine(host,p2,'mine'),json={}).json())
 
@@ -59,19 +62,19 @@ signature_s = signed_object['s']
 balData={
     "pub":publicKeyP1,
 }
-print(requests.get(combine(host,p1,'balance'), json=balData).json())
+print(6,requests.get(combine(host,p1,'balance'), json=balData).json())
 
 # Checking balance for p2
 
 balData={
     "pub":publicKeyP2,
 }
-print(requests.get(combine(host,p2,'balance'), json=balData).json())
+print(7,requests.get(combine(host,p2,'balance'), json=balData).json())
 
 balData={
     "pub":publicKeyP3,
 }
-print(requests.get(combine(host,p3,'balance'), json=balData).json())
+print(8,requests.get(combine(host,p3,'balance'), json=balData).json())
 
 print("before transaction")
 
@@ -84,7 +87,7 @@ transData={
     "signature_s":signature_s,
 }
 
-requests.post(combine(host,p1,'addtxn'),json=transData)
+print("-----------",requests.post(combine(host,p1,'addtxn'),json=transData).json())
 
 
 
@@ -93,21 +96,21 @@ print("Transaction added from p1 to p2")
 
 # Testing the getdata mempool function
 
-print(requests.get(combine(host,p1,'getdata')).json()['mempool_txn'])
-print(requests.get(combine(host,p2,'getdata')).json()['mempool_txn'])
-print(requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
+print(9,requests.get(combine(host,p1,'getdata')).json()['mempool_txn'])
+print(10,requests.get(combine(host,p2,'getdata')).json()['mempool_txn'])
+print(11,requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
 
 
 # Mining to verify the transaction in mempool
 
 # print(requests.post(combine(host,p1,'mine'),json={}).json())
 # print(requests.post(combine(host,p2,'mine'),json={}).json())
-print(requests.post(combine(host,p3,'mine'),json={}).json())
+print(12,requests.post(combine(host,p3,'mine'),json={}).json())
 
 
-print(requests.get(combine(host,p1,'getdata')).json()['mempool_txn'])
-print(requests.get(combine(host,p2,'getdata')).json()['mempool_txn'])
-print(requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
+print(13,requests.get(combine(host,p1,'getdata')).json()['mempool_txn'])
+print(14,requests.get(combine(host,p2,'getdata')).json()['mempool_txn'])
+print(15,requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
 
 
 # print(requests.post(combine(host,p2,'mine'),json={}).json())
@@ -121,19 +124,25 @@ print(requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
 balData={
     "pub":publicKeyP1,
 }
-print(requests.get(combine(host,p1,'balance'), json=balData).json())
+print(16,requests.get(combine(host,p1,'balance'), json=balData).json())
+print(17,requests.get(combine(host,p2,'balance'), json=balData).json())
+print(18,requests.get(combine(host,p3,'balance'), json=balData).json())
 
 # Checking balance for p2
 
 balData={
     "pub":publicKeyP2,
 }
-print(requests.get(combine(host,p2,'balance'), json=balData).json())
+print(19,requests.get(combine(host,p1,'balance'), json=balData).json())
+print(20,requests.get(combine(host,p2,'balance'), json=balData).json())
+print(21,requests.get(combine(host,p3,'balance'), json=balData).json())
 
 balData={
     "pub":publicKeyP3,
 }
-print(requests.get(combine(host,p3,'balance'), json=balData).json())
+print(22,requests.get(combine(host,p1,'balance'), json=balData).json())
+print(23,requests.get(combine(host,p2,'balance'), json=balData).json())
+print(24,requests.get(combine(host,p3,'balance'), json=balData).json())
 
 # balData={
 #     "pub":publicKeyP3,
