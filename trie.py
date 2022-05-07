@@ -11,6 +11,8 @@ class Node:
 class End:
 
     def __init__(self):
+        self.activeRequest = None
+        self.activeServicing = None
         self.rides = {
             RIDES_TAKEN:[],
             RIDES_PROVIDED:[]
@@ -29,10 +31,15 @@ class Trie:
     def load(self,file="trie"):
         if file not in set(os.listdir()):
             return
-        self.master = pickle.load(open(file, 'rb')).master
+    #     self.master = pickle.load(open(os.path.join(str(port),"blockchain"), 'wb')).master
 
-    def save(self,file="trie"):
-        pickle.dump(self,open(file, 'wb'))
+    # def save(func):
+    #     def inner(*args, **kwargs):
+    #         x = func(*args, **kwargs)
+    #         pickle.dump(args[0],open("trie", 'wb'))
+    #         return x 
+    #     return inner
+
 
     def is_hex(self,s):
         try:
@@ -41,18 +48,19 @@ class Trie:
         except:
             return False
 
-
+    # @save
     def insert(self, word) -> None:
         if isinstance(word, int):
             word = hex(word)
         res = self.insertWord(word,0,self.master)
-        self.save()
         return res
+
 
     def search(self, word) -> bool:
         if isinstance(word, int):
             word = hex(word)
         return self.dfsSearchStrict(word,0,self.master)
+
 
     def insertWord(self,word,ptr,node):
         if ptr<len(word):
@@ -62,6 +70,7 @@ class Trie:
         else:
             node.childrens[-1] = End()
             return node.childrens[-1]
+
 
     def dfsSearchStrict(self,word,ptr,node):
         if ptr<len(word):
@@ -75,6 +84,7 @@ class Trie:
 
         return False,None
 
+    # @save
     def insert_txn(self,txn_block):
         if txn_block['sender']!="COINBASE":
             sender = hex(txn_block['sender'])
@@ -90,19 +100,49 @@ class Trie:
         if not valid:
             end = self.insert(hex(txn_block['receiver']))
         end.txn[TXN_IN].append(txn_block)
-        self.save()
 
-    def insert_ride(self,ride_block):
-        valid,end = self.search(hex(ride_block['passenger']))
-        if not valid:
-            end = self.insert(hex(ride_block['passenger']))
-        end.rides[RIDES_TAKEN].append(ride_block)
 
-        valid,end = self.search(hex(ride_block['provider']))
+    # @save
+    def insert_ride_request(self,ride_block):
+        valid,end = self.search(ride_block['passenger'])
         if not valid:
-            end = self.insert(hex(ride_block['provider']))
+            end = self.insert(ride_block['passenger'])
+        
+        end.activeRequest = ride_block
+
+    # @save
+    def assign_provider(self,passenger,provider,amount):
+        valid,end = self.search(passenger)
+        if not valid:
+            end = self.insert(passenger)
+
+        end.activeRequest['provider'] = provider
+        end.activeRequest['amount'] = amount
+
+        ride_block = end.activeRequest
+
+        valid,end = self.search(provider)
+        if not valid:
+            end = self.insert(provider)
+        
+        end.activeServicing = ride_block
+
+    # @save
+    def ride_completed(self,passenger):
+        valid,end = self.search(passenger)
+        if not valid:
+            end = self.insert(passenger)
+
+        end.rides[RIDES_TAKEN].append(end.activeRequest)
+        provider = end.activeRequest['provider']
+        ride_block = end.activeRequest
+        end.activeRequest = None
+
+        valid,end = self.search(provider)
+        if not valid:
+            end = self.insert(provider)
         end.rides[RIDES_PROVIDED].append(ride_block)
-        self.save()
+
 
     def calculate_balance(self,pubKey):
         valid,end = self.search(pubKey)
@@ -115,6 +155,7 @@ class Trie:
         for tx in end.txn[TXN_OUT]:
             outAmt += tx['amount']
         return inAmt-outAmt
+
 
     def retrieve_data(self,pubKey):
 
@@ -139,8 +180,9 @@ class Trie:
         return response
 
 
+
+
 if __name__=="__main__":
     t = Trie()
     # t.insert("hello")
     print(t.search("hello"))
-    t.save()
