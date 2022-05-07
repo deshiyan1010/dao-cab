@@ -21,6 +21,13 @@ import pickle
 
 import os
 
+from functools import wraps
+
+
+
+
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--port", help = "Port")
 args = parser.parse_args()
@@ -41,8 +48,9 @@ def retriveState():
         blockchain = Blockchain(comp,pvt,mining)
         return blockchain,comp,pvt
 
-
-    blockchain = pickle.load(open(os.path.join(str(port),"blockchain"), 'wb'))
+    file = open(os.path.join(str(port),"blockchain"), 'rb')
+    blockchain = pickle.load(file)
+    file.close()
     blockchain.globalMine = mining
     return blockchain,blockchain.pubKey,blockchain.pvtKey
 
@@ -54,7 +62,17 @@ consesus = Consesus(blockchain)
 
 queue = Queue(100)
 
-
+def save(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        x = func(*args, **kwargs)
+        if str(port) not in os.listdir():
+            os.mkdir(str(port))
+        file = open(os.path.join(str(port),"blockchain"), 'wb')
+        pickle.dump(blockchain,file)
+        file.close()
+        return x 
+    return inner
 
 class Connection(FlaskView):
     route_base = '/'
@@ -68,16 +86,6 @@ class Connection(FlaskView):
             requests.post(self.combine(host,port,"connect"),json=req)
 
         atexit.register(self.purge)
-
-    
-    def save(func):
-        def inner(*args, **kwargs):
-            x = func(*args, **kwargs)
-            if str(port) not in os.os.listdir():
-                os.mkdir(str(port))
-            pickle.dump(blockchain,open(os.path.join(str(port),"blockchain"), 'wb'))
-            return x 
-        return inner
 
     @save
     def block_addition(self,block):
@@ -167,9 +175,10 @@ class Connection(FlaskView):
         
         nodes.pop((req['ip'],req['port']))
         return jsonify({}), 200
-        
-    @save
+    
+    
     @route('/blockbroadcast',methods=['POST'])
+    @save
     def broadcast_block(self,):
         req = request.get_json()
         block = req["block"]
@@ -206,7 +215,7 @@ class Connection(FlaskView):
         nodes.remove((host,port))
         return jsonify(response), 200
 
-    @save
+    
     @route('/mine',methods=["POST"])
     def mine(self):
 
@@ -231,8 +240,9 @@ class Connection(FlaskView):
         bal = blockchain.get_balance(req["pub"])
         return jsonify({"bal":bal}), 200
 
-    @save
+    
     @route('/addtxn',methods=['POST'])
+    @save
     def add_transaction(self,):
 
 
@@ -254,8 +264,9 @@ class Connection(FlaskView):
         else:
             return jsonify({"message":"Signature verification failed OR repeate broadcast OR insufficient balance"}),400
 
-    @save
+    
     @route('/bookride',methods=['GET'])
+    @save
     def book_ride(self):
         
         #params passenger, signed hash, pick_loc,drop_loc

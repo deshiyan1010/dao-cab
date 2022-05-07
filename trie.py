@@ -26,19 +26,12 @@ class Trie:
 
     def __init__(self):
         self.master = Node(-1)
-        self.load()
+    #     self.load()
 
-    def load(self,file="trie"):
-        if file not in set(os.listdir()):
-            return
+    # def load(self,file="trie"):
+    #     if file not in set(os.listdir()):
+    #         return
     #     self.master = pickle.load(open(os.path.join(str(port),"blockchain"), 'wb')).master
-
-    # def save(func):
-    #     def inner(*args, **kwargs):
-    #         x = func(*args, **kwargs)
-    #         pickle.dump(args[0],open("trie", 'wb'))
-    #         return x 
-    #     return inner
 
 
     def is_hex(self,s):
@@ -48,7 +41,6 @@ class Trie:
         except:
             return False
 
-    # @save
     def insert(self, word) -> None:
         if isinstance(word, int):
             word = hex(word)
@@ -84,7 +76,6 @@ class Trie:
 
         return False,None
 
-    # @save
     def insert_txn(self,txn_block):
         if txn_block['sender']!="COINBASE":
             sender = hex(txn_block['sender'])
@@ -102,7 +93,6 @@ class Trie:
         end.txn[TXN_IN].append(txn_block)
 
 
-    # @save
     def insert_ride_request(self,ride_block):
         valid,end = self.search(ride_block['passenger'])
         if not valid:
@@ -110,7 +100,6 @@ class Trie:
         
         end.activeRequest = ride_block
 
-    # @save
     def assign_provider(self,passenger,provider,amount):
         valid,end = self.search(passenger)
         if not valid:
@@ -127,7 +116,6 @@ class Trie:
         
         end.activeServicing = ride_block
 
-    # @save
     def ride_completed(self,passenger):
         valid,end = self.search(passenger)
         if not valid:
