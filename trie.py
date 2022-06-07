@@ -11,6 +11,7 @@ class Node:
 class End:
 
     def __init__(self):
+        self.bid_war = {}
         self.activeRequest = None
         self.activeServicing = None
         self.rides = {

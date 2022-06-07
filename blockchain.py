@@ -1,11 +1,13 @@
 from datetime import datetime
 import hashlib
 import json
+from click import pass_context
 import requests
 from uuid import uuid4
 from urllib.parse import urlparse
+from mcodes import ACTIVE_REQ_ON, NO_ACTIVE_REQ, RIDES_PROVIDED, RIDES_TAKEN, SEARCH_FAILED, SUCCESS
 from trie import Trie
-
+from gis import GIS
 
 class Mining:
  
@@ -22,8 +24,7 @@ class Blockchain:
         self.chain = []
         self.transactions = []
         self.local_txn_hash = ''
-        self.booking_open_req = []
-        self.booking_on_going = []
+
         self.booking_fulfilled = []
         genBlock = self.create_block(proof=1, previous_hash='0')
         self.append_block(genBlock)
@@ -32,7 +33,7 @@ class Blockchain:
         self.pvtKey = pvtKey
         self.trie = Trie()
         self.globalMine = gmining
-
+        self.gis = GIS(1)
 
     def create_block(self, proof, previous_hash):
         block = {'index': len(self.chain) + 1,
@@ -46,6 +47,7 @@ class Blockchain:
 
     def append_block(self,block):
         self.transactions = []
+        self.booking_fulfilled = []
         self.chain.append(block)
 
 
@@ -97,7 +99,8 @@ class Blockchain:
                     'transactions': block['transactions'],
                     'timestamp': block['timestamp'],
                     'proof': block['proof'],
-                    'previous_hash': block['previous_hash']}
+                    'previous_hash': block['previous_hash'],
+                    'ride_bookings':block['ride_bookings']}
 
         return response,block
 
@@ -135,14 +138,97 @@ class Blockchain:
             return True
         return False
 
+
+
     def add_booking(self, passenger, from_loc, to_loc):
-        self.booking_open_req.append({
+        
+        found,block = self.trie.search(passenger)
+
+        if not found:
+            return SEARCH_FAILED
+        
+        if block.activeRequest:
+            return ACTIVE_REQ_ON
+
+        ride_recipt = {
             'passenger': passenger,
             'from_loc': from_loc,
             'to_loc': to_loc,
             'provider':None,
             'amount':None,
-        })
+        }
+        block.activeRequest = ride_recipt
+
+        self.gis.addToBucket(*from_loc,passenger,ride_recipt)
+
+        return SUCCESS
+
+
+    def end_ride(self,passenger):
+
+        found,block = self.trie.search(passenger)
+
+        if not found:
+            return SEARCH_FAILED
+        
+        if not block.activeRequest:
+            return NO_ACTIVE_REQ
+        
+        data = block.activeRequest
+        block.activeRequest = None 
+
+        self.booking_fulfilled.append(data)
+
+        block.rides[RIDES_TAKEN].append(data)
+
+        provider = data['provider']
+        found,block = self.trie.search(provider)
+
+        block.activeServicing = None 
+        block.rides[RIDES_PROVIDED].append(data)
+
+        return SUCCESS
+
+
+    def bid(self,passenger,provider,bid):
+
+        found,block = self.trie.search(passenger)
+
+        if not found:
+            return SEARCH_FAILED
+        
+        if not block.activeRequest:
+            return NO_ACTIVE_REQ
+
+        block.bid_war[provider]=bid
+    
+
+    def select_bid(self,passenger,provider):
+
+        found,block = self.trie.search(passenger)
+
+        if not found:
+            return SEARCH_FAILED
+        
+        if not block.activeRequest:
+            return NO_ACTIVE_REQ
+
+        bid = block.bid_wars[provider]
+
+        self.gis.remove(passenger)
+
+        block.activeRequest['provider'] = provider
+        block.activeRequest['amount'] = bid 
+        data = block.activeRequest
+
+        found,block = self.trie.search(provider)
+        block.activeServicing = data 
+
+        return SUCCESS
+
+
+    def get_ride_requests(self,lat,long,k):
+        return self.gis.get_radius(k,lat,long)
 
 
 

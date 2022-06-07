@@ -9,16 +9,17 @@ class GIS:
         self.bucket = defaultdict(list)
         self.linker = {}
 
-    def addToBucket(self,lat,long,pubKey):
+    def addToBucket(self,lat,long,pubKey,data):
         centric_lat,centric_long = self.convert(lat,long)
         self.bucket[(centric_lat,centric_long)].append((lat,long,pubKey))
-        self.linker[pubKey] = (lat,long)
+        self.linker[pubKey] = (lat,long,data)
 
     def remove(self,pubKey):
-        lat,long = self.linker[pubKey]
+        lat,long,data = self.linker[pubKey]
         c_lat,c_long = self.convert(lat,long)
         self.bucket[(c_lat,c_long)].remove((lat,long,pubKey))
-        return lat,long
+        self.linker.pop(pubKey)
+        return lat,long,data
     
     def query(self,lat,long):
         c_lat,c_long = self.convert(lat,long)

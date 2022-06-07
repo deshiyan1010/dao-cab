@@ -31,7 +31,6 @@ class Consesus:
 
 
     def add_block(self,block):
-        self.blockchain.transactions = []
         for txn in block['transactions']:
             self.blockchain.trie.insert_txn(txn)
         self.blockchain.append_block(block)
