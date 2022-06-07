@@ -21,6 +21,7 @@ class Blockchain:
     def __init__(self,pubKey,pvtKey,gmining):
         self.chain = []
         self.transactions = []
+        self.local_txn_hash = ''
         self.booking_open_req = []
         self.booking_on_going = []
         self.booking_fulfilled = []
@@ -41,8 +42,6 @@ class Blockchain:
                  'transactions': self.transactions,
                  'ride_bookings': self.booking_fulfilled}
 
-        self.transactions = []
-        self.booking_fulfilled = []
         return block
 
     def append_block(self,block):
@@ -90,7 +89,7 @@ class Blockchain:
             }
 
         self.transactions.append(coinbasetxn)
-        self.add_transaction("COINBASE",self.pubKey, 1)     
+
         block = self.create_block(None, previous_hash)
         block['proof'] = proof   
         response = {'message': 'Congratulations, you just mined a block!',
@@ -130,6 +129,8 @@ class Blockchain:
                 'amount': amount
                 }
         if sender!="COINBASE" and self.trie.calculate_balance(sender)>=amount:
+            self.local_txn_hash += self.hash(block)
+            self.local_txn_hash = hashlib.sha256(self.local_txn_hash.encode()).hexdigest()
             self.transactions.append(block)
             return True
         return False

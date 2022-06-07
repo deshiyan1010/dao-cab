@@ -66,11 +66,11 @@ def save(func):
     @wraps(func)
     def inner(*args, **kwargs):
         x = func(*args, **kwargs)
-        if str(port) not in os.listdir():
-            os.mkdir(str(port))
-        file = open(os.path.join(str(port),"blockchain"), 'wb')
-        pickle.dump(blockchain,file)
-        file.close()
+        # if str(port) not in os.listdir():
+        #     os.mkdir(str(port))
+        # file = open(os.path.join(str(port),"blockchain"), 'wb')
+        # pickle.dump(blockchain,file)
+        # file.close()
         return x 
     return inner
 
