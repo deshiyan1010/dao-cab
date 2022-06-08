@@ -14,7 +14,7 @@ class Consesus:
             if b['sender']!="COINBASE":
                 block_txn_hash+=self.blockchain.hash(b)
                 block_txn_hash = hashlib.sha256(block_txn_hash.encode()).hexdigest()
-        print(block_txn_hash,local_txn_hash)
+        print("B",block_txn_hash,"L",local_txn_hash)
         if local_txn_hash==block_txn_hash:
             return True 
         return False

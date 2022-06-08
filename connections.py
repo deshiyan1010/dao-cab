@@ -1,4 +1,7 @@
 
+from crypt import methods
+
+from numpy import block
 from consesus import Consesus
 from ecc import EllipticCurveCryptography
 from blockchain import Blockchain,Mining
@@ -23,9 +26,10 @@ import os
 
 from functools import wraps
 
+import logging
 
-
-
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
 parser = argparse.ArgumentParser()
@@ -59,18 +63,18 @@ nodes = set()
 blockchain,comp,pvt = retriveState()
 consesus = Consesus(blockchain)
 
-
+print(comp,pvt)
 queue = Queue(100)
 
 def save(func):
     @wraps(func)
     def inner(*args, **kwargs):
         x = func(*args, **kwargs)
-        # if str(port) not in os.listdir():
-        #     os.mkdir(str(port))
-        # file = open(os.path.join(str(port),"blockchain"), 'wb')
-        # pickle.dump(blockchain,file)
-        # file.close()
+        if str(port) not in os.listdir():
+            os.mkdir(str(port))
+        file = open(os.path.join(str(port),"blockchain"), 'wb')
+        pickle.dump(blockchain,file)
+        file.close()
         return x 
     return inner
 
@@ -239,12 +243,24 @@ class Connection(FlaskView):
         
         bal = blockchain.get_balance(req["pub"])
         return jsonify({"bal":bal}), 200
-
     
+
+    @route('/broadcasttxn',methods=['POST'])
+    @save
+    def broadcast_transaction(self,):
+        txnblock = request.get_json()
+
+        if ecc.verify(txnblock['sender'],txnblock['signed_hash'],txnblock['signature_r'],txnblock['signature_s']) and not self.broadcasted(txnblock) and blockchain.get_balance(txnblock['sender'])>=txnblock['amount']:
+            blockchain.add_transaction(txnblock)
+            self.broadcast_message_post('broadcasttxn',txnblock)
+            return jsonify({}),200
+        else:
+            return jsonify({"message":"Signature verification failed OR repeate broadcast OR insufficient balance"}),400
+
+
     @route('/addtxn',methods=['POST'])
     @save
     def add_transaction(self,):
-
 
         #params public key, signed hash, reciever and amount   REFER ecc.py FOR GENERATING SIGNATURES AND VERIFICATION  
         #https://cryptobook.nakov.com/digital-signatures/ecdsa-sign-verify-messages to know now ecc signing and verification works
@@ -255,16 +271,12 @@ class Connection(FlaskView):
         #step5 : broadcast_message
 
         req = request.get_json()
-        print(ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']))
-        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req) and blockchain.get_balance(req['sender'])>=req['amount']:
-            blockchain.add_transaction(req['sender'],req['receiver'], req['amount'])
-        
-            self.broadcast_message_post('addtxn',req)
-            return jsonify({}),200
-        else:
-            return jsonify({"message":"Signature verification failed OR repeate broadcast OR insufficient balance"}),400
+        block = blockchain.create_txn_block(req)
+        reqObj = requests.post(self.combine(host,port,'broadcasttxn'),json=block)
+        return jsonify(reqObj.json()),reqObj.status_code
 
-    
+
+
     @route('/bookride',methods=['GET'])
     @save
     def book_ride(self):
@@ -326,14 +338,24 @@ class Connection(FlaskView):
         return jsonify(ecc.sign(req['pvt'],None)),200
 
 
+    @route('/explore',methods=["GET"])
+    def explore(self):
+        pubKey = request.get_json()["pubKey"]
+        return blockchain.trie.retrieve_data(pubKey)
+
     @route('/requestredirect',methods=["POST"])   
     def redirect(self):
         requestJson = request.get_json()
+        reqType = requestJson["reqtype"].lower()
+        req = requestJson['req']
 
-        if requestJson["reqtype"].lower()=="post":
-            return jsonify(requests.post(self.combine(host,port,requestJson['req']),json=requestJson).json()),200
+        requestJson.remove('reqtype')
+        requestJson.remove('req')
+
+        if reqType=="post":
+            return jsonify(requests.post(self.combine(host,port,req),json=requestJson).json()),200
         else: 
-            return jsonify(requests.get(self.combine(host,port,requestJson['req']),json=requestJson).json()),200
+            return jsonify(requests.get(self.combine(host,port,req),json=requestJson).json()),200
 
 
 

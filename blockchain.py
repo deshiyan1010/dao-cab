@@ -48,6 +48,7 @@ class Blockchain:
     def append_block(self,block):
         self.transactions = []
         self.booking_fulfilled = []
+        self.local_txn_hash = ''
         self.chain.append(block)
 
 
@@ -87,7 +88,8 @@ class Blockchain:
         coinbasetxn = {
             'sender': "COINBASE",
             'receiver': self.pubKey,
-            'amount': 1
+            'amount': 1,
+            'timestamp':str(datetime.now())
             }
 
         self.transactions.append(coinbasetxn)
@@ -125,19 +127,20 @@ class Blockchain:
             block_index += 1
         return True
 
-    def add_transaction(self, sender, receiver, amount):
-        block = {
-                'sender': sender,
-                'receiver': receiver,
-                'amount': amount
-                }
-        if sender!="COINBASE" and self.trie.calculate_balance(sender)>=amount:
+    def add_transaction(self, block):
+
+        if block['sender']!="COINBASE" and self.trie.calculate_balance(block['sender'])>=block['amount']:
             self.local_txn_hash += self.hash(block)
             self.local_txn_hash = hashlib.sha256(self.local_txn_hash.encode()).hexdigest()
+            # print(self.local_txn_hash,block)
             self.transactions.append(block)
             return True
         return False
 
+
+    def create_txn_block(self,req):
+        req['timestamp'] = str(datetime.now())
+        return req
 
 
     def add_booking(self, passenger, from_loc, to_loc):
@@ -156,6 +159,7 @@ class Blockchain:
             'to_loc': to_loc,
             'provider':None,
             'amount':None,
+            'timestamp': str(datetime.now()),
         }
         block.activeRequest = ride_recipt
 
