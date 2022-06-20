@@ -343,15 +343,17 @@ class Connection(FlaskView):
     @route('/explore',methods=["GET"])
     def explore(self):
         pubKey = request.get_json()["pubKey"]
-        print(blockchain.trie.retrieve_data(pubKey))
         return jsonify(blockchain.trie.retrieve_data(pubKey)),200
 
     @route('/requestredirect',methods=["POST"])   
     def redirect(self):
         requestJson = request.get_json()
-        print(requestJson)
         reqType = requestJson["reqtype"].lower()
         req = requestJson['req']
+
+        requestJson.remove('reqtype')
+        requestJson.remove('req')
+
         if reqType=="post":
             return jsonify(requests.post(self.combine(host,port,req),json=requestJson).json()),200
         else: 
