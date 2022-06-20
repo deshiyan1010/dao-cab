@@ -1,5 +1,6 @@
 
-from crypt import methods
+# from crypt import methods
+from flask_cors import CORS
 
 from numpy import block
 from consesus import Consesus
@@ -26,10 +27,10 @@ import os
 
 from functools import wraps
 
-import logging
+# import logging
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
 
 
 parser = argparse.ArgumentParser()
@@ -37,6 +38,7 @@ parser.add_argument("-p", "--port", help = "Port")
 args = parser.parse_args()
 
 app = Flask(__name__)
+CORS(app)
 host='127.0.0.1'
 port=args.port
 
@@ -341,17 +343,15 @@ class Connection(FlaskView):
     @route('/explore',methods=["GET"])
     def explore(self):
         pubKey = request.get_json()["pubKey"]
-        return blockchain.trie.retrieve_data(pubKey)
+        print(blockchain.trie.retrieve_data(pubKey))
+        return jsonify(blockchain.trie.retrieve_data(pubKey)),200
 
     @route('/requestredirect',methods=["POST"])   
     def redirect(self):
         requestJson = request.get_json()
+        print(requestJson)
         reqType = requestJson["reqtype"].lower()
         req = requestJson['req']
-
-        requestJson.remove('reqtype')
-        requestJson.remove('req')
-
         if reqType=="post":
             return jsonify(requests.post(self.combine(host,port,req),json=requestJson).json()),200
         else: 
