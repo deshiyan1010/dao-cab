@@ -45,9 +45,16 @@ class Trie:
 
     def get_hex(self,word):
         # print(word,type(word))
-        if not isinstance(word,str):
+
+        if word=="COINBASE":
+            return word
+
+        if isinstance(word,str) and word[:2]!="0x":
+            word = hex(int(word))
+        elif isinstance(word,int):
             word = hex(word)
         return word
+
 
 
     def insert(self, word) -> None:
@@ -160,7 +167,7 @@ class Trie:
     def retrieve_data(self,pubKey):
         
         pubKey = self.get_hex(pubKey)
-
+        print("\n"*10,pubKey)
         response = {
             'found':False,
             'txin':[],
@@ -172,17 +179,39 @@ class Trie:
         valid,end = self.search(pubKey)
         if not valid:
             return response
-        
+
         response['txin'] = end.txn[TXN_IN]
         response['txout'] = end.txn[TXN_OUT]
         response['ridetaken'] = end.rides[RIDES_TAKEN]
         response['rideprovided'] = end.rides[RIDES_PROVIDED]
         response['found'] = True
         
+
+        for i in range(len(response['txin'])):
+            response['txin'][i]['receiver'] = self.handled_hex(response['txin'][i]['receiver'])
+            response['txin'][i]['sender'] = self.handled_hex(response['txin'][i]['sender'])
+
+        for i in range(len(response['txout'])):
+            response['txout'][i]['receiver'] = self.handled_hex(response['txout'][i]['receiver'])
+            response['txout'][i]['sender'] = self.handled_hex(response['txout'][i]['sender'])
+
+        for i in range(len(response['ridetaken'])):
+            response['ridetaken'][i]['provider'] = self.handled_hex(response['ridetaken'][i]['provider'])
+            response['ridetaken'][i]['passenger'] = self.handled_hex(response['ridetaken'][i]['passenger'])
+
+        for i in range(len(response['rideprovided'])):
+            response['rideprovided'][i]['provider'] = self.handled_hex(response['rideprovided'][i]['provider'])
+            response['rideprovided'][i]['passenger'] = self.handled_hex(response['rideprovided'][i]['passenger'])
+
+
         return response
 
 
-
+    def handled_hex(self,word):
+        try:
+            return hex(word)
+        except:
+            return word
 
 if __name__=="__main__":
     t = Trie()
