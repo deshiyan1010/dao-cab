@@ -173,7 +173,10 @@ class Trie:
             'txin':[],
             'txout':[],
             'ridetaken':[],
-            'rideprovided':[]
+            'rideprovided':[],
+            'bid_war':None,
+            'activeRequest':None,
+            'activeServicing':None
         }
 
         valid,end = self.search(pubKey)
@@ -185,7 +188,9 @@ class Trie:
         response['ridetaken'] = end.rides[RIDES_TAKEN]
         response['rideprovided'] = end.rides[RIDES_PROVIDED]
         response['found'] = True
-        
+        response['bid_war'] = end.bid_war
+        response['activeRequest'] = end.activeRequest
+        response['activeServicing'] = end.activeServicing
 
         for i in range(len(response['txin'])):
             response['txin'][i]['receiver'] = self.handled_hex(response['txin'][i]['receiver'])
