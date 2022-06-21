@@ -65,7 +65,7 @@ nodes = set()
 blockchain,comp,pvt = retriveState()
 consesus = Consesus(blockchain)
 
-print(comp,pvt)
+print(hex(comp),pvt)
 queue = Queue(100)
 
 def save(func):

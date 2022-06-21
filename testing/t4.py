@@ -6,7 +6,8 @@ import sys
 sys.path.append('..')
 from ecc import EllipticCurveCryptography
 from pprint import pprint
-
+from datetime import datetime
+import time
 
 
 def combine(ip,port,path):
@@ -49,6 +50,7 @@ publicKeyP2 = keysP2["pub"]
 publicKeyP3 = keysP3["pub"]
 privateKeyP3 = keysP3["pvt"]
 
+print(publicKeyP1,publicKeyP2,publicKeyP3)
 
 ecc = EllipticCurveCryptography()
 signed_object = ecc.sign(privateKeyP1)
@@ -64,6 +66,7 @@ transData={
     "signed_hash":None,
     "signature_r":signature_r,
     "signature_s":signature_s,
+    "time":time.mktime(datetime.now().timetuple())
 }
 
 print("-----------",requests.post(combine(host,p1,'bookride'),json=transData).json())
@@ -73,17 +76,17 @@ print("-----------",requests.post(combine(host,p1,'bookride'),json=transData).js
 
 #AFTER RIDE REQUEST SUBMISSION
 #IN P1
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(5, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P2
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(7, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(9, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
@@ -124,20 +127,26 @@ transData={
     "signed_hash":None,
     "signature_r":signature_r,
     "signature_s":signature_s,
+    "time":time.mktime(datetime.now().timetuple())
 }
 print(19,requests.post(combine(host,p3,'selbidride'), json=transData).json())
 
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(20, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
+jsonx = {"pubKey":publicKeyP1}
+print(20, "Rider")
+print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
+
+
 #IN P2
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(21, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(22, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
@@ -146,20 +155,6 @@ print(23,requests.get(combine(host,p3,'listride'), json=jsonx).json())
 
 # End ride
 
-# IN P1
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
-print(5, "Rider")
-print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
-
-#IN P2
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
-print(7, "Rider")
-print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
-
-#IN P3
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
-print(9, "Rider")
-print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
 transData={
     "passenger":publicKeyP1,  
@@ -167,60 +162,61 @@ transData={
     "signed_hash":None,
     "signature_r":signature_r,
     "signature_s":signature_s,
+    "time":time.mktime(datetime.now().timetuple())
 }
-print(requests.post(combine(host,p3,'endride'), json=transData).json())
+print("--------",requests.post(combine(host,p3,'endride'), json=transData).json())
 
 #IN P1
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(5, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P2
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(7, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(9, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
 
 #AFTER RIDE END
 #IN P1
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(24, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":"0x186aee1d9870df32c59030e7dc9a0aec72b28e9d3f9fa19f91f799ddee4c59662"}
+jsonx = {"pubKey":hex(publicKeyP2)}
 print(25, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json()['rideprovided'])
 
 
 #IN P2
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(26, "Rider")
 pprint(requests.get(combine(host,p2,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":"0x186aee1d9870df32c59030e7dc9a0aec72b28e9d3f9fa19f91f799ddee4c59662"}
+jsonx = {"pubKey":hex(publicKeyP2)}
 print(27, "Provider")
 pprint(requests.get(combine(host,p2,'explore'), json=jsonx).json()['rideprovided'])
 
 
 #IN P3
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(28, "Rider")
 pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":"0x186aee1d9870df32c59030e7dc9a0aec72b28e9d3f9fa19f91f799ddee4c59662"}
+jsonx = {"pubKey":hex(publicKeyP2)}
 print(29, "Provider")
 pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['rideprovided'])
 
 
-jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
+jsonx = {"pubKey":hex(publicKeyP1)}
 print(20, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
 
-jsonx = {"pubKey":"0x186aee1d9870df32c59030e7dc9a0aec72b28e9d3f9fa19f91f799ddee4c59662"}
+jsonx = {"pubKey":hex(publicKeyP2)}
 print(20, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
