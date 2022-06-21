@@ -148,7 +148,7 @@ class Blockchain:
         found,block = self.trie.search(passenger)
 
         if not found:
-            return SEARCH_FAILED
+            block = self.trie.insert(passenger)
         
         if block.activeRequest:
             return ACTIVE_REQ_ON
@@ -175,6 +175,7 @@ class Blockchain:
         if not found:
             return SEARCH_FAILED
         
+        
         if not block.activeRequest:
             return NO_ACTIVE_REQ
         
@@ -199,7 +200,8 @@ class Blockchain:
         found,block = self.trie.search(passenger)
 
         if not found:
-            return SEARCH_FAILED
+            block = self.trie.insert(passenger)
+        
         
         if not block.activeRequest:
             return NO_ACTIVE_REQ
@@ -217,8 +219,9 @@ class Blockchain:
         if not block.activeRequest:
             return NO_ACTIVE_REQ
 
-        bid = block.bid_wars[provider]
-
+        bid = block.bid_war[provider]
+        block.bid_war = {}
+        
         self.gis.remove(passenger)
 
         block.activeRequest['provider'] = provider
@@ -226,12 +229,17 @@ class Blockchain:
         data = block.activeRequest
 
         found,block = self.trie.search(provider)
+
+        if not found:
+            block = self.trie.insert(provider)
+
+
         block.activeServicing = data 
 
         return SUCCESS
 
 
-    def get_ride_requests(self,lat,long,k):
+    def get_ride_requests(self,k,lat,long):
         return self.gis.get_radius(k,lat,long)
 
 
