@@ -153,7 +153,7 @@ print(24,requests.get(combine(host,p3,'balance'), json=balData).json())
 
 
 print(publicKeyP3)
-jsonx = {"pubKey":312225830859370951780608748925173258727083128049137890652641525295514472790559}
+jsonx = {"pubKey":publicKeyP1}
 
 from pprint import pprint
 
