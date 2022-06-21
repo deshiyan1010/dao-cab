@@ -279,7 +279,7 @@ class Connection(FlaskView):
 
 
 
-    @route('/bookride',methods=['GET'])
+    @route('/bookride',methods=['POST'])
     @save
     def book_ride(self):
         
@@ -288,7 +288,7 @@ class Connection(FlaskView):
         #step2:  broadcast_message
 
         req = request.get_json()
-        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+        if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
             blockchain.add_booking(req['passenger'],req['pick_loc'], req['drop_loc'])
             self.broadcast_message_post('bookride',req)
             return jsonify({}),200
@@ -308,7 +308,7 @@ class Connection(FlaskView):
     @save
     def end_ride(self):
         req = request.get_json()
-        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+        if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
             blockchain.end_ride(req['passenger'])
             self.broadcast_message_post('endride',req)
             return jsonify({}),200
@@ -320,18 +320,30 @@ class Connection(FlaskView):
     def bid_ride(self):
         req = request.get_json()
         blockchain.bid(req['passenger'],req['provider'],req['bid'])
+        self.broadcast_message_post('bidride',req)
         return jsonify({}),200
 
     @route('/selbidride',methods=['POST'])
     @save
     def sel_bid_ride(self):
         req = request.get_json()
-        if ecc.verify(req['sender'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+        print(req)
+        if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
             blockchain.select_bid(req['passenger'],req['provider'])
             self.broadcast_message_post('selbidride',req)
             return jsonify({}),200
         else:
             return jsonify({"message":"Signature verification failed OR repeate broadcast"}),400
+
+
+    @route('/bidlist',methods=['GET'])
+    @save
+    def bid_list(self):
+        req = request.get_json()
+        return jsonify(blockchain.trie.retrieve_data(req['passenger'])['bid_war']),200
+
+
+
 
 
     @route('/getsigs',methods=["GET"])   
@@ -351,8 +363,8 @@ class Connection(FlaskView):
         reqType = requestJson["reqtype"].lower()
         req = requestJson['req']
 
-        requestJson.remove('reqtype')
-        requestJson.remove('req')
+        requestJson.pop('reqtype')
+        requestJson.pop('req')
 
         if reqType=="post":
             return jsonify(requests.post(self.combine(host,port,req),json=requestJson).json()),200
