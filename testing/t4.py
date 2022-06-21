@@ -217,6 +217,10 @@ signature_s = signed_object['s']
 # pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['rideprovided'])
 
 
-jsonx = {"pubKey":publicKeyP2}
+jsonx = {"pubKey":"0x2b2498eca454c17a7762f59b84c43dea78e015b5745437ddf973a86860125ba1f"}
 print(20, "Rider")
+pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
+
+jsonx = {"pubKey":"0x186aee1d9870df32c59030e7dc9a0aec72b28e9d3f9fa19f91f799ddee4c59662"}
+print(20, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
