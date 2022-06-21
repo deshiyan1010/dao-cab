@@ -132,7 +132,6 @@ class Blockchain:
         if block['sender']!="COINBASE" and self.trie.calculate_balance(block['sender'])>=block['amount']:
             self.local_txn_hash += self.hash(block)
             self.local_txn_hash = hashlib.sha256(self.local_txn_hash.encode()).hexdigest()
-            # print(self.local_txn_hash,block)
             self.transactions.append(block)
             return True
         return False
@@ -149,7 +148,8 @@ class Blockchain:
 
         if not found:
             block = self.trie.insert(passenger)
-        
+            found,block = self.trie.search(passenger)
+
         if block.activeRequest:
             return ACTIVE_REQ_ON
 
@@ -202,12 +202,14 @@ class Blockchain:
         if not found:
             block = self.trie.insert(passenger)
         
-        
+        print("\n\n\n\n\nBID")
+        print(block.bid_war)
         if not block.activeRequest:
             return NO_ACTIVE_REQ
 
         block.bid_war[provider]=bid
-    
+        print("\n\n\n\n\nBID")
+        print(block.bid_war)
 
     def select_bid(self,passenger,provider):
 
@@ -219,9 +221,11 @@ class Blockchain:
         if not block.activeRequest:
             return NO_ACTIVE_REQ
 
+        print("\n\n\n\n\nBID")
+        print(block.bid_war)
         bid = block.bid_war[provider]
         block.bid_war = {}
-        
+        print("\n\n\n\n\nBID")
         self.gis.remove(passenger)
 
         block.activeRequest['provider'] = provider
@@ -232,7 +236,6 @@ class Blockchain:
 
         if not found:
             block = self.trie.insert(provider)
-
 
         block.activeServicing = data 
 
@@ -246,11 +249,4 @@ class Blockchain:
 
     def get_balance(self,pubKey):
         return self.trie.calculate_balance(pubKey)
-
-    # def clear_mempool(self):
-    #     print("see i am clearing")
-    #     self.transactions=[]
-    #     print(self.transactions)
-    #     print("i cleared mempools!!")
-    #     return True 
 

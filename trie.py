@@ -44,7 +44,6 @@ class Trie:
             return False
 
     def get_hex(self,word):
-        # print(word,type(word))
 
         if word=="COINBASE":
             return word
@@ -167,7 +166,7 @@ class Trie:
     def retrieve_data(self,pubKey):
         
         pubKey = self.get_hex(pubKey)
-        print("\n"*10,pubKey)
+
         response = {
             'found':False,
             'txin':[],

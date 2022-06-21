@@ -25,7 +25,8 @@ p3 = "5003"
 
 data = {
     "ip":host,
-    "port":p2
+    "port":p2,
+    "time":time.time()
     }
 print(1,requests.post(combine(host,p1,'connect'),json=data).json())
 print(2,requests.get(combine(host,p1,'neighbors')).json())
@@ -33,7 +34,8 @@ print(2,requests.get(combine(host,p1,'neighbors')).json())
 
 data = {
     "ip":host,
-    "port":p3
+    "port":p3,
+    "time":time.time()
     }
 print(3,requests.post(combine(host,p2,'connect'),json=data).json())
 print(4,requests.get(combine(host,p2,'neighbors')).json())
@@ -50,7 +52,20 @@ publicKeyP2 = keysP2["pub"]
 publicKeyP3 = keysP3["pub"]
 privateKeyP3 = keysP3["pvt"]
 
-print(publicKeyP1,publicKeyP2,publicKeyP3)
+print(5,publicKeyP1,publicKeyP2,publicKeyP3)
+
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(35, "Rider")
+pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
+
+jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+print(36, "Provider")
+pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
+
+
+
+
+
 
 ecc = EllipticCurveCryptography()
 signed_object = ecc.sign(privateKeyP1)
@@ -66,27 +81,28 @@ transData={
     "signed_hash":None,
     "signature_r":signature_r,
     "signature_s":signature_s,
-    "time":time.mktime(datetime.now().timetuple())
+    "time":time.time()
 }
 
-print("-----------",requests.post(combine(host,p1,'bookride'),json=transData).json())
+print(6,requests.post(combine(host,p1,'bookride'),json=transData).json())
 
 
-
+jsonx = {'k':1,'lat':0.10001,'long':0.1005,"time":time.time()}
+print("lISR",requests.get(combine(host,p3,'listride'), json=jsonx).json())
 
 #AFTER RIDE REQUEST SUBMISSION
 #IN P1
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(5, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(7, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(7, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(8, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1)}
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
 print(9, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
@@ -94,13 +110,13 @@ print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest
 
 #Getting list
 
-jsonx = {'k':1,'lat':0.10001,'long':0.1005}
+jsonx = {'k':1,'lat':0.10001,'long':0.1005,"time":time.time()}
 print(10,requests.get(combine(host,p3,'listride'), json=jsonx).json())
 
 
 
 #Bidding
-jsonx = {'passenger':publicKeyP1,'provider':publicKeyP2,'bid':1}
+jsonx = {'passenger':publicKeyP1,'provider':publicKeyP2,'bid':1,"time":time.time()}
 print(11,requests.post(combine(host,p3,'bidride'), json=jsonx).json())
 
 print("Bid placed")
@@ -110,7 +126,7 @@ print(14,requests.get(combine(host,p3,'bidlist'), json=jsonx).json())
 
 
 
-jsonx = {'passenger':publicKeyP1,'provider':publicKeyP3,'bid':1}
+jsonx = {'passenger':publicKeyP1,'provider':publicKeyP3,'bid':1,"time":time.time()}
 print(15,requests.post(combine(host,p3,'bidride'), json=jsonx).json())
 
 print("Bid placed")
@@ -127,31 +143,38 @@ transData={
     "signed_hash":None,
     "signature_r":signature_r,
     "signature_s":signature_s,
-    "time":time.mktime(datetime.now().timetuple())
+    "time":time.time()
 }
 print(19,requests.post(combine(host,p3,'selbidride'), json=transData).json())
 
-jsonx = {"pubKey":hex(publicKeyP1)}
+print("Bid placed")
+print("19 1",requests.get(combine(host,p1,'bidlist'), json=jsonx).json())
+print("19 2",requests.get(combine(host,p2,'bidlist'), json=jsonx).json())
+print("19 3",requests.get(combine(host,p3,'bidlist'), json=jsonx).json())
+
+
+
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
 print(20, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
-jsonx = {"pubKey":publicKeyP1}
-print(20, "Rider")
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
+print(21, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(21, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(22, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(22, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(23, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
-jsonx = {'k':1,'lat':0.10001,'long':0.1005}
-print(23,requests.get(combine(host,p3,'listride'), json=jsonx).json())
+jsonx = {'k':1,'lat':0.10001,'long':0.1005,"time":time.time()}
+print(24,requests.get(combine(host,p3,'listride'), json=jsonx).json())
 
 # End ride
 
@@ -162,61 +185,66 @@ transData={
     "signed_hash":None,
     "signature_r":signature_r,
     "signature_s":signature_s,
-    "time":time.mktime(datetime.now().timetuple())
+    "time":time.time()
 }
-print("--------",requests.post(combine(host,p3,'endride'), json=transData).json())
+print(25,requests.post(combine(host,p3,'endride'), json=transData).json())
 
 #IN P1
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(5, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(26, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(7, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(27, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(9, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(28, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
 
 #AFTER RIDE END
 #IN P1
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(24, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(29, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":hex(publicKeyP2)}
-print(25, "Provider")
+jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+print(30, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json()['rideprovided'])
 
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(26, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(31, "Rider")
 pprint(requests.get(combine(host,p2,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":hex(publicKeyP2)}
-print(27, "Provider")
+jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+print(32, "Provider")
 pprint(requests.get(combine(host,p2,'explore'), json=jsonx).json()['rideprovided'])
 
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(28, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(33, "Rider")
 pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":hex(publicKeyP2)}
-print(29, "Provider")
+jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+print(34, "Provider")
 pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['rideprovided'])
 
 
-jsonx = {"pubKey":hex(publicKeyP1)}
-print(20, "Rider")
+jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+print(35, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
 
-jsonx = {"pubKey":hex(publicKeyP2)}
-print(20, "Provider")
+jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+print(36, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
+
+
+# 327732053144230409430711419899576270243849593603494877335522421623534199527687 
+# 327730911841986681097836592843987417287867806353322131929635691254694657601006 
+# 222450721913100064538976071099491672195376128944214984608165340672728410908986

@@ -39,7 +39,7 @@ class GIS:
         k = int(k)
         query_response = []
         # k-=1
-        print(k,"\n"*5)
+
         c_lat,c_long = self.convert(lat,long)
         c_lat-=self.precision*k 
         c_long-=self.precision*k 
@@ -50,7 +50,6 @@ class GIS:
                 q_c_long = q_c_long-360
             for j in range(2*k):
                 q_c_lat = c_lat+self.precision*j 
-                print(q_c_lat,q_c_long)
                 query_response.extend(self.bucket[(q_c_lat,q_c_long)])
         
         return query_response

@@ -114,7 +114,7 @@ class Connection(FlaskView):
         
         queue.insert(hashed)
         for endpoint in nodes:
-            print(requests.post(self.combine(*endpoint,url),json=data).json())
+            requests.post(self.combine(*endpoint,url),json=data).json()
 
 
     def combine(self,ip,port,path):
@@ -197,7 +197,6 @@ class Connection(FlaskView):
                 return jsonify({}),200
             else:
                 message = "ALERT: Invalid block. This block will not be broadcasted."
-                print("SELF: ",message)
                 return jsonify({"message":message}), 400
 
         return jsonify({"message":"repeat request"}),200
@@ -288,9 +287,15 @@ class Connection(FlaskView):
         #step2:  broadcast_message
 
         req = request.get_json()
+        print("----------------",ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']), not self.broadcasted(req))
         if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+            print("ADDED")
+            print("BRGIS")
+            pprint(blockchain.gis.__dict__)
             blockchain.add_booking(req['passenger'],req['pick_loc'], req['drop_loc'])
             self.broadcast_message_post('bookride',req)
+            print("BRGIS")
+            pprint(blockchain.gis.__dict__)
             return jsonify({}),200
         else:
             return jsonify({"message":"Signature verification failed OR repeate broadcast"}),400
@@ -308,8 +313,15 @@ class Connection(FlaskView):
     @save
     def end_ride(self):
         req = request.get_json()
+        print(req)
+        print(ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']), not self.broadcasted(req))
+
         if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+            print("ENDGIS")
+            pprint(blockchain.gis.__dict__)
             blockchain.end_ride(req['passenger'])
+            print("ENDGIS")
+            pprint(blockchain.gis.__dict__)
             self.broadcast_message_post('endride',req)
             return jsonify({}),200
         else:
@@ -319,17 +331,25 @@ class Connection(FlaskView):
     @save
     def bid_ride(self):
         req = request.get_json()
-        blockchain.bid(req['passenger'],req['provider'],req['bid'])
-        self.broadcast_message_post('bidride',req)
-        return jsonify({}),200
+        if not self.broadcasted(req):
+            blockchain.bid(req['passenger'],req['provider'],req['bid'])
+            self.broadcast_message_post('bidride',req)
+            return jsonify({}),200
+        return jsonify({}),400
+
 
     @route('/selbidride',methods=['POST'])
     @save
     def sel_bid_ride(self):
         req = request.get_json()
-        print(req)
+
+        print(blockchain.gis.__dict__)
         if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
+            print("SELGIS")
+            pprint(blockchain.gis.__dict__)
             blockchain.select_bid(req['passenger'],req['provider'])
+            print("SELGIS")
+            pprint(blockchain.gis.__dict__)
             self.broadcast_message_post('selbidride',req)
             return jsonify({}),200
         else:
