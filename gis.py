@@ -36,9 +36,10 @@ class GIS:
         return c_lat,c_long
 
     def get_radius(self,k,lat,long):
+        k = int(k)
         query_response = []
-        k-=1
-
+        # k-=1
+        print(k,"\n"*5)
         c_lat,c_long = self.convert(lat,long)
         c_lat-=self.precision*k 
         c_long-=self.precision*k 
