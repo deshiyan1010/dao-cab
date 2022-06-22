@@ -392,7 +392,29 @@ class Connection(FlaskView):
             return jsonify(requests.get(self.combine(host,port,req),json=requestJson).json()),200
 
 
+    @route('/meta',methods=["GET"])   
+    def metadata(self):
+        chain = blockchain.chain
+        mempool = blockchain.transactions
 
+        txn_count = 0
+        supply = 0
+        for i in range(len(chain)):
+            txn_count+=len(chain[i]['transactions'])
+            for t in chain[i]['transactions']:
+                supply += t['amount']
+
+        meta = {
+            'latest_block':chain[-1]['index'],
+            'txn_count':txn_count,
+            'pen_txn':mempool,
+            'total_supply':supply,
+            'latest_txn':chain[-1]['transactions'],
+            'chain':chain
+        }
+
+
+        return jsonify({'meta':meta}),200
 
 
 Connection.register(app,route_base = '/')
