@@ -4,7 +4,7 @@ import json
 def combine(ip,port,path):
     return "http://"+ip+":"+port+"/"+path
 
-host = "127.0.0.1"
+host = "0.0.0.0"
 
 p1 = "5001"
 p2 = "5002"

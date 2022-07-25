@@ -54,11 +54,11 @@ privateKeyP3 = keysP3["pvt"]
 
 print(5,publicKeyP1,publicKeyP2,publicKeyP3)
 
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(35, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
 
-jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+jsonx = {"pubKey":publicKeyP2,"time":time.time()}
 print(36, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
 
@@ -92,17 +92,17 @@ print("lISR",requests.get(combine(host,p3,'listride'), json=jsonx).json())
 
 #AFTER RIDE REQUEST SUBMISSION
 #IN P1
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(7, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(8, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(9, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
@@ -154,7 +154,7 @@ print("19 3",requests.get(combine(host,p3,'bidlist'), json=jsonx).json())
 
 
 
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(20, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
@@ -164,12 +164,12 @@ print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest
 
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(22, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(23, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
@@ -190,57 +190,57 @@ transData={
 print(25,requests.post(combine(host,p3,'endride'), json=transData).json())
 
 #IN P1
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(26, "Rider")
 print(requests.get(combine(host,p1,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(27, "Rider")
 print(requests.get(combine(host,p2,'explore'), json=jsonx).json()['activeRequest'])
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(28, "Rider")
 print(requests.get(combine(host,p3,'explore'), json=jsonx).json()['activeRequest'])
 
 
 #AFTER RIDE END
 #IN P1
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(29, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+jsonx = {"pubKey":publicKeyP2,"time":time.time()}
 print(30, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json()['rideprovided'])
 
 
 #IN P2
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(31, "Rider")
 pprint(requests.get(combine(host,p2,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+jsonx = {"pubKey":publicKeyP2,"time":time.time()}
 print(32, "Provider")
 pprint(requests.get(combine(host,p2,'explore'), json=jsonx).json()['rideprovided'])
 
 
 #IN P3
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(33, "Rider")
 pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['ridetaken'])
 
-jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+jsonx = {"pubKey":publicKeyP2,"time":time.time()}
 print(34, "Provider")
 pprint(requests.get(combine(host,p3,'explore'), json=jsonx).json()['rideprovided'])
 
 
-jsonx = {"pubKey":hex(publicKeyP1),"time":time.time()}
+jsonx = {"pubKey":publicKeyP1,"time":time.time()}
 print(35, "Rider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
 
-jsonx = {"pubKey":hex(publicKeyP2),"time":time.time()}
+jsonx = {"pubKey":publicKeyP2,"time":time.time()}
 print(36, "Provider")
 pprint(requests.get(combine(host,p1,'explore'), json=jsonx).json())
 

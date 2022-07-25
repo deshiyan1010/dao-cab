@@ -11,7 +11,7 @@ from ecc import EllipticCurveCryptography
 def combine(ip,port,path):
     return "http://"+ip+":"+port+"/"+path
 
-host = "127.0.0.1"
+host = "0.0.0.0"
 # "http://"+"127.0.0.1"+":"+"5000"+"/"+getdata
 p1 = "5001"
 p2 = "5002"
@@ -53,9 +53,10 @@ privateKeyP2 = keysP2["pvt"]
 publicKeyP2 = keysP2["pub"]
 publicKeyP3 = keysP3["pub"]
 privateKeyP3 = keysP3["pvt"]
-ecc = EllipticCurveCryptography()
+
 print(privateKeyP1)
-signed_object = ecc.sign(privateKeyP1)
+signed_object = requests.get(combine(host,p1,'getsigs'),json={"pvt":privateKeyP1}).json()
+print(signed_object)
 signature_r = signed_object['r']
 signature_s = signed_object['s']
 
@@ -70,12 +71,12 @@ print(6,requests.get(combine(host,p1,'balance'), json=balData).json())
 balData={
     "pub":publicKeyP2,
 }
-print(7,requests.get(combine(host,p2,'balance'), json=balData).json())
+print(7,requests.get(combine(host,p1,'balance'), json=balData).json())
 
 balData={
     "pub":publicKeyP3,
 }
-print(8,requests.get(combine(host,p3,'balance'), json=balData).json())
+print(8,requests.get(combine(host,p1,'balance'), json=balData).json())
 
 print("before transaction")
 
@@ -88,7 +89,7 @@ transData={
     "signature_s":signature_s,
 }
 
-print("-----------",requests.post(combine(host,p1,'addtxn'),json=transData).json())
+print("-----------",requests.post(combine(host,p1,'addtxn'),json=transData).status_code)
 
 
 
@@ -106,7 +107,7 @@ print(11,requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
 
 # print(requests.post(combine(host,p1,'mine'),json={}).json())
 # print(requests.post(combine(host,p2,'mine'),json={}).json())
-print(12,requests.post(combine(host,p3,'mine'),json={}).json())
+# print(12,requests.post(combine(host,p3,'mine'),json={}).json())
 
 
 print(13,requests.get(combine(host,p1,'getdata')).json()['mempool_txn'])
@@ -119,7 +120,7 @@ print(15,requests.get(combine(host,p3,'getdata')).json()['mempool_txn'])
 # print(requests.post(combine(host,p1,'mine'),json={}).json())
 # print(requests.post(combine(host,p1,'mine'),json={}).json())
 
-# print(requests.post(combine(host,p2,'mine'),json={}).json())
+print(requests.post(combine(host,p2,'mine'),json={}).json())
 
 # Checking balance for p1
 balData={

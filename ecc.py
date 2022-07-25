@@ -69,11 +69,12 @@ class EllipticCurveCryptography:
 
     def compress_pubKey(self,pubx,puby):
         if puby%2==1:
-            return int("1"+hex(pubx)[2:],16)
-        return int("2"+hex(pubx)[2:],16)
+            return hex(int("1"+hex(pubx)[2:],16))
+        return hex(int("2"+hex(pubx)[2:],16))
 
     def decompress_pubKey(self,pubx):
-        hexString = hex(pubx)
+        hexString = pubx
+        pubx = int(pubx,16)
         inter = sqrtmod(pow(int(hexString[3:],16), 3, self.Pcurve) + self.Acurve * pubx + self.Bcurve, self.Pcurve)
         if (hexString[2]=="1" and bool(inter & 1)==1) or (hexString[2]=="2" and bool(inter & 1)!=1):
             return (int(hexString[3:],16),inter) 
@@ -96,12 +97,13 @@ class EllipticCurveCryptography:
         xRandSignPoint, yRandSignPoint = self.EccMultiply(self.GPoint,RandNum)
         r = xRandSignPoint % self.N
         s = ((hash + r*private_key)*(self.modinv(RandNum,self.N))) % self.N
-        signed_object = {'r':r,'s':s}
+        signed_object = {'r':str(r),'s':str(s)}
         return signed_object
 
     def verify(self,pubKey,hash,r,s):
-        if isinstance(pubKey,str):
-            pubKey = int(pubKey,16)
+
+        r = int(r)
+        s = int(s)
         pubKey = self.decompress_pubKey(pubKey)
         if hash!=None:
             if isinstance(hash,str):
@@ -164,6 +166,7 @@ if __name__=="__main__":
     e = EllipticCurveCryptography()
     p1,p2,pvt = e.generate_ecc_pair()
     comp = e.compress_pubKey(p1,p2)
+    print(p1,p2,e.decompress_pubKey(comp))
     message = "hello"
     hashed = hashlib.sha256(message.encode('utf-8')).hexdigest()
     print("1",int(hashed,16))

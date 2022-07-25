@@ -30,41 +30,20 @@ class Trie:
         self.master = Node(-1)
     #     self.load()
 
-    # def load(self,file="trie"):
-    #     if file not in set(os.listdir()):
-    #         return
-    #     self.master = pickle.load(open(os.path.join(str(port),"blockchain"), 'wb')).master
-
-
-    def is_hex(self,s):
-        try:
-            int(s, 16)
-            return True
-        except:
-            return False
-
-    def get_hex(self,word):
-
-        if word=="COINBASE":
-            return word
-
-        if isinstance(word,str) and word[:2]!="0x":
-            word = hex(int(word))
-        elif isinstance(word,int):
-            word = hex(word)
-        return word
 
 
 
     def insert(self, word) -> None:
-        word = self.get_hex(word)
         res = self.insertWord(word,0,self.master)
         return res
 
 
     def search(self, word) -> bool:
-        word = self.get_hex(word)
-        return self.dfsSearchStrict(word,0,self.master)
+        print(word,type(word),"\n\n\n")
+        x = self.dfsSearchStrict(word,0,self.master)
+        print(x)
+        return x 
+        
 
 
     def insertWord(self,word,ptr,node):
@@ -90,32 +69,30 @@ class Trie:
         return False,None
 
     def insert_txn(self,txn_block):
-        if txn_block['sender']!="COINBASE":
-            sender = self.get_hex(txn_block['sender'])
-        else:
-            sender = "COINBASE"
+
+
+        sender = txn_block['sender']
 
         valid,end = self.search(sender)
         if not valid:
             end = self.insert(sender)
         end.txn[TXN_OUT].append(txn_block)
 
-        valid,end = self.search(self.get_hex(txn_block['receiver']))
+        valid,end = self.search(txn_block['receiver'])
         if not valid:
-            end = self.insert(self.get_hex(txn_block['receiver']))
+            end = self.insert(txn_block['receiver'])
         end.txn[TXN_IN].append(txn_block)
 
 
     def insert_ride_request(self,ride_block):
-        valid,end = self.search(self.get_hex(ride_block['passenger']))
+        valid,end = self.search(ride_block['passenger'])
         if not valid:
-            end = self.insert(self.get_hex(ride_block['passenger']))
+            end = self.insert(ride_block['passenger'])
         
         end.activeRequest = ride_block
 
     def assign_provider(self,passenger,provider,amount):
-        passenger = self.get_hex(passenger)
-        provider = self.get_hex(provider)
+
 
         valid,end = self.search(passenger)
         if not valid:
@@ -133,13 +110,12 @@ class Trie:
         end.activeServicing = ride_block
 
     def ride_completed(self,passenger):
-        passenger = self.get_hex(passenger)
         valid,end = self.search(passenger)
         if not valid:
             end = self.insert(passenger)
 
         end.rides[RIDES_TAKEN].append(end.activeRequest)
-        provider = self.get_hex(end.activeRequest['provider'])
+        provider = end.activeRequest['provider']
         ride_block = end.activeRequest
         end.activeRequest = None
 
@@ -150,7 +126,6 @@ class Trie:
 
 
     def calculate_balance(self,pubKey):
-        pubKey = self.get_hex(pubKey)
         valid,end = self.search(pubKey)
         if not valid:
             return 0
@@ -165,8 +140,6 @@ class Trie:
 
     def retrieve_data(self,pubKey):
         
-        pubKey = self.get_hex(pubKey)
-
         response = {
             'found':False,
             'txin':[],
@@ -175,7 +148,8 @@ class Trie:
             'rideprovided':[],
             'bid_war':None,
             'activeRequest':None,
-            'activeServicing':None
+            'activeServicing':None,
+            'pubKey':pubKey
         }
 
         valid,end = self.search(pubKey)
@@ -191,31 +165,25 @@ class Trie:
         response['activeRequest'] = end.activeRequest
         response['activeServicing'] = end.activeServicing
 
-        for i in range(len(response['txin'])):
-            response['txin'][i]['receiver'] = self.handled_hex(response['txin'][i]['receiver'])
-            response['txin'][i]['sender'] = self.handled_hex(response['txin'][i]['sender'])
+        # for i in range(len(response['txin'])):
+        #     response['txin'][i]['receiver'] = response['txin'][i]['receiver']
+        #     response['txin'][i]['sender'] = response['txin'][i]['sender']
 
-        for i in range(len(response['txout'])):
-            response['txout'][i]['receiver'] = self.handled_hex(response['txout'][i]['receiver'])
-            response['txout'][i]['sender'] = self.handled_hex(response['txout'][i]['sender'])
+        # for i in range(len(response['txout'])):
+        #     response['txout'][i]['receiver'] = response['txout'][i]['receiver']
+        #     response['txout'][i]['sender'] = response['txout'][i]['sender']
 
-        for i in range(len(response['ridetaken'])):
-            response['ridetaken'][i]['provider'] = self.handled_hex(response['ridetaken'][i]['provider'])
-            response['ridetaken'][i]['passenger'] = self.handled_hex(response['ridetaken'][i]['passenger'])
+        # for i in range(len(response['ridetaken'])):
+        #     response['ridetaken'][i]['provider'] = response['ridetaken'][i]['provider']
+        #     response['ridetaken'][i]['passenger'] = response['ridetaken'][i]['passenger']
 
-        for i in range(len(response['rideprovided'])):
-            response['rideprovided'][i]['provider'] = self.handled_hex(response['rideprovided'][i]['provider'])
-            response['rideprovided'][i]['passenger'] = self.handled_hex(response['rideprovided'][i]['passenger'])
+        # for i in range(len(response['rideprovided'])):
+        #     response['rideprovided'][i]['provider'] = response['rideprovided'][i]['provider']
+        #     response['rideprovided'][i]['passenger'] = response['rideprovided'][i]['passenger']
 
 
         return response
 
-
-    def handled_hex(self,word):
-        try:
-            return hex(word)
-        except:
-            return word
 
 if __name__=="__main__":
     t = Trie()

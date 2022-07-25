@@ -39,7 +39,7 @@ args = parser.parse_args()
 
 app = Flask(__name__)
 CORS(app)
-host='127.0.0.1'
+host='0.0.0.0'
 port=args.port
 
 ecc = EllipticCurveCryptography()
@@ -50,6 +50,7 @@ mining = Mining()
 def retriveState():
     if str(port) not in set(os.listdir()):
         pubx,puby,pvt = ecc.generate_ecc_pair()
+        pvt = hex(pvt)
         comp = ecc.compress_pubKey(pubx,puby)
         blockchain = Blockchain(comp,pvt,mining)
         return blockchain,comp,pvt
@@ -65,7 +66,7 @@ nodes = set()
 blockchain,comp,pvt = retriveState()
 consesus = Consesus(blockchain)
 
-print(hex(comp),pvt)
+print(comp,pvt)
 queue = Queue(100)
 
 def save(func):
@@ -137,7 +138,7 @@ class Connection(FlaskView):
 
     @route('/getkey',methods=["GET"])
     def getKey(self,):
-        return jsonify({"pub":comp,"pvt":pvt,"pubh":hex(comp),"pvth":hex(pvt)}),200
+        return jsonify({"pub":comp,"pvt":pvt}),200
 
     @route('/connect',methods=['POST'])
     def connect(self):
@@ -239,9 +240,7 @@ class Connection(FlaskView):
     def get_balance(self):
 
         req = request.get_json()
-        if isinstance(req["pub"],str):
-            req["pub"] = int(req["pub"],16)
-        
+
         bal = blockchain.get_balance(req["pub"])
         return jsonify({"bal":bal}), 200
     
@@ -291,7 +290,7 @@ class Connection(FlaskView):
         if ecc.verify(req['passenger'],req['signed_hash'],req['signature_r'],req['signature_s']) and not self.broadcasted(req):
             print("ADDED")
             print("BRGIS")
-            pprint(blockchain.gis.__dict__)
+            # pprint(blockchain.gis.__dict__)
             blockchain.add_booking(req['passenger'],req['pick_loc'], req['drop_loc'])
             self.broadcast_message_post('bookride',req)
             print("BRGIS")
@@ -305,8 +304,25 @@ class Connection(FlaskView):
     @save
     def list_ride(self):
         r = request.get_json()
-        return jsonify({"list":blockchain.get_ride_requests(r['k'],r['lat'],r['long'])}),200
+        print(r,"\n\n\n\n")
+        ride_list = []
+
+        for record in blockchain.get_ride_requests(r['k'],r['lat'],r['long']):
+            rec = {}
+            rec['pick'] =(record[0],record[1])
+            rec['pubKey'] = record[2]
+            request_block = blockchain.get_block(record[2])[1].activeRequest
+            rec['drop'] = (request_block['to_loc'])
+            ride_list.append(rec)
+        return jsonify({"list":ride_list}),200
     
+    @route('/getservicereq',methods=['GET'])
+    def get_assigned_ride(self):
+        r = request.get_json()
+        found,block = blockchain.get_block(r['pubKey'])
+        if not found:
+            return jsonify({'job':None}),200
+        return jsonify({'job':block.activeServicing}),200
 
 
     @route('/endride',methods=['POST'])
@@ -371,6 +387,13 @@ class Connection(FlaskView):
         req = request.get_json()
         return jsonify(ecc.sign(req['pvt'],None)),200
 
+    @route('/genpubpvt',methods=["GET"])   
+    def getPubPvt(self,):
+        pubx,puby,pvt = ecc.generate_ecc_pair()
+        pvt = hex(pvt)
+        comp = ecc.compress_pubKey(pubx,puby)
+        return jsonify({"pub":comp,"pvt":pvt}),200
+
 
     @route('/explore',methods=["GET"])
     def explore(self):
@@ -403,6 +426,8 @@ class Connection(FlaskView):
             txn_count+=len(chain[i]['transactions'])
             for t in chain[i]['transactions']:
                 supply += t['amount']
+
+
 
         meta = {
             'latest_block':chain[-1]['index'],
