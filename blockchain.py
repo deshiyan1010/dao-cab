@@ -51,6 +51,9 @@ class Blockchain:
         self.local_txn_hash = ''
         self.chain.append(block)
 
+    def get_block(self,pubKey):
+        found,block = self.trie.search(pubKey)
+        return found,block
 
     def get_previous_block(self):
         return self.chain[-1]
